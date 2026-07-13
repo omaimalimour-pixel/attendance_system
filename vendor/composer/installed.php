@@ -1,0 +1,41 @@
+<?php return array(
+    'root' => array(
+        'name' => '__root__',
+        'pretty_version' => '1.0.0+no-version-set',
+        'version' => '1.0.0.0',
+        'reference' => null,
+        'type' => 'library',
+        'install_path' => __DIR__ . '/../../',
+        'aliases' => array(),
+        'dev' => true,
+    ),
+    'versions' => array(
+        '__root__' => array(
+            'pretty_version' => '1.0.0+no-version-set',
+            'version' => '1.0.0.0',
+            'reference' => null,
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../../',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'coding-libs/zkteco-php' => array(
+            'pretty_version' => 'v0.0.35',
+            'version' => '0.0.35.0',
+            'reference' => '52e177c5a6ec7ff0d35764ee750b7a885c4610a6',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../coding-libs/zkteco-php',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'rats/zkteco' => array(
+            'pretty_version' => 'V002',
+            'version' => '002.0.0.0',
+            'reference' => '6e17024370ec56c89d87c85a54a1c55079304834',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../rats/zkteco',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+    ),
+);

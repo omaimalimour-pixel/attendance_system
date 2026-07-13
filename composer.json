@@ -1,0 +1,6 @@
+{
+    "require": {
+        "coding-libs/zkteco-php": "^0.0.35",
+        "rats/zkteco": "^002.0"
+    }
+}
