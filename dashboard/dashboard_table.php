@@ -1,157 +1,193 @@
+<?php
+
+if(!isset($selectedDate)){
+    $selectedDate = date("Y-m-d");
+}
+
+$sqlAttendanceTable = "
+SELECT
+
+employees.user_id,
+employees.first_name,
+employees.last_name,
+
+MIN(attendance.time) AS first_in,
+MAX(attendance.time) AS last_out,
+
+COUNT(attendance.id) AS punches
+
+FROM employees
+
+LEFT JOIN attendance
+
+ON employees.user_id = attendance.user_id
+
+AND attendance.date = '$selectedDate'
+
+GROUP BY employees.user_id
+
+ORDER BY employees.first_name ASC
+";
+
+$resultAttendanceTable = mysqli_query($conn,$sqlAttendanceTable);
+
+?>
+
 <!-- ================= TABLE ATTENDANCE ================= -->
 
 <div class="panel">
 
-    <div class="panel-head">
+<div class="panel-head">
 
-        <div>
+<div>
 
-            <h3>Today's Attendance</h3>
+<h3>Today's Attendance</h3>
 
-            <p class="sub">
+<p class="sub">
 
-                <?= date("d/m/Y",strtotime($selectedDate)); ?>
+<?= date("d/m/Y",strtotime($selectedDate)); ?>
 
-            </p>
+</p>
 
-        </div>
+</div>
 
-    </div>
+</div>
 
-    <div class="table-scroll">
+<div class="table-scroll">
 
-        <table class="att">
+<table class="att">
 
-            <thead>
+<thead>
 
-            <tr>
+<tr>
 
-                <th>Employee</th>
+<th>Employee</th>
 
-                <th>First IN</th>
+<th>First IN</th>
 
-                <th>Last OUT</th>
+<th>Last OUT</th>
 
-                <th>Work Hours</th>
+<th>Work Hours</th>
 
-                <th>Punches</th>
+<th>Punches</th>
 
-                <th>Status</th>
+<th>Status</th>
 
-            </tr>
+</tr>
 
-            </thead>
+</thead>
 
-            <tbody>
+<tbody>
+<?php
 
-            <?php
+while($row = mysqli_fetch_assoc($resultAttendanceTable)){
 
-            while($row=mysqli_fetch_assoc($resultAttendanceTable)){
+    $status = "Absent";
+    $badge  = "b-absent";
 
-                $status="Absent";
+    if($row['first_in']){
 
-                $badge="b-absent";
+        $status = "Present";
+        $badge  = "b-present";
 
-                if($row['first_in']){
+    }
 
-                    $status="Present";
+    $hours = "--";
 
-                    $badge="b-present";
+    if($row['first_in'] && $row['last_out']){
 
-                }
+        $start = strtotime($row['first_in']);
+        $end   = strtotime($row['last_out']);
 
-                $hours="--";
+        if($end > $start){
+            $hours = gmdate("H:i", $end - $start);
+        }
 
-                if($row['first_in'] && $row['last_out']){
+    }
 
-                    $start=strtotime($row['first_in']);
+    $letter = strtoupper(substr($row['first_name'],0,1));
 
-                    $end=strtotime($row['last_out']);
+?>
 
-                    $hours=gmdate("H:i",$end-$start);
+<tr>
 
-                }
+<td>
 
-                $letter=strtoupper(substr($row['first_name'],0,1));
+<div class="emp">
 
-            ?>
+<div class="emp-av">
 
-            <tr>
+<?= $letter ?>
 
-                <td>
+</div>
 
-                    <div class="emp">
+<div>
 
-                        <div class="emp-av">
+<div class="emp-name">
 
-                            <?= $letter ?>
+<?= htmlspecialchars($row['first_name']." ".$row['last_name']) ?>
 
-                        </div>
+</div>
 
-                        <div>
+<div class="emp-id">
 
-                            <div class="emp-name">
+ID : <?= $row['user_id'] ?>
 
-                                <?= htmlspecialchars($row['first_name']." ".$row['last_name']) ?>
+</div>
 
-                            </div>
+</div>
 
-                            <div class="emp-id">
+</div>
 
-                                ID : <?= $row['user_id'] ?>
+</td>
 
-                            </div>
+<td class="mono">
 
-                        </div>
+<?= $row['first_in'] ? $row['first_in'] : "--" ?>
 
-                    </div>
+</td>
 
-                </td>
+<td class="mono">
 
-                <td class="mono">
+<?= $row['last_out'] ? $row['last_out'] : "--" ?>
 
-                    <?= $row['first_in'] ? $row['first_in'] : "--" ?>
+</td>
+<td class="mono">
 
-                </td>
+<?= $row['punches'] ?>
 
-                <td class="mono">
+</td>
 
-                    <?= $row['last_out'] ? $row['last_out'] : "--" ?>
+<td class="mono">
 
-                </td>
+<?= $hours ?>
 
-                <td class="mono">
+</td>
 
-                    <?= $hours ?>
+<td>
 
-                </td>
+<span class="badge-status <?= $badge ?>">
 
-                <td class="mono">
+<span class="bdot"></span>
 
-                    <?= $row['punches'] ?>
+<?= $status ?>
 
-                </td>
+</span>
 
-                <td>
+</td>
 
-                    <span class="badge-status <?= $badge ?>">
+</tr>
 
-                        <span class="bdot"></span>
+<?php
 
-                        <?= $status ?>
+}
 
-                    </span>
+?>
 
-                </td>
+</tbody>
 
-            </tr>
+</table>
 
-            <?php } ?>
-
-            </tbody>
-
-        </table>
-
-    </div>
+</div>
 
 </div>

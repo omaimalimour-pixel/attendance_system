@@ -1,5 +1,6 @@
 <?php
 error_reporting(E_ALL);
+
 ini_set('display_errors', 1);
 
 include "dashboard_data.php";
@@ -33,8 +34,6 @@ if ($totalEmployees > 0) {
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-<script src="https://unpkg.com/lucide@latest"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <link rel="stylesheet" href="dashboard.css">
@@ -45,7 +44,7 @@ if ($totalEmployees > 0) {
 
 <!-- ================= SIDEBAR ================= -->
 
-<aside class="app-sidebar">
+<aside class="app-sidebar" id="sidebar">
 
 <div class="brand">
 
@@ -131,11 +130,13 @@ Administrator
 
 </aside>
 
-<div class="app-main">
+<div class="backdrop" id="backdrop"></div>
+
+<div class="app-main" id="main">
 
 <header class="app-header">
 
-<button class="icon-btn" id="toggleSidebar">
+<button class="icon-btn" id="toggleSidebar" title="Toggle Sidebar">
 <i data-lucide="panel-left"></i>
 </button>
 
@@ -166,6 +167,7 @@ A
 </header>
 
 <div class="app-content">
+<!-- ================= FILTER BAR ================= -->
 
 <div class="section-head">
 
@@ -183,7 +185,7 @@ value="<?= $selectedDate ?>"
 
 </div>
 
-<button class="qa-btn qa-primary">
+<button type="submit" class="qa-btn qa-primary">
 
 <i data-lucide="filter"></i>
 
@@ -218,104 +220,24 @@ Refresh
 <!-- ================= KPI CARDS ================= -->
 
 <?php include "dashboard_cards.php"; ?>
+
 <!-- ================= CHARTS ================= -->
 
 <div class="row g-3 mb-4">
 
-    <!-- Monthly Chart -->
+<div class="col-lg-8">
 
-    <div class="col-lg-8">
+<div class="panel h-100">
 
-        <div class="panel h-100">
+<div class="panel-head">
 
-            <div class="panel-head">
+<div>
 
-                <div>
+<h3>Weekly Attendance</h3>
 
-                    <h3>Monthly Attendance</h3>
+<p class="sub">
 
-                    <p class="sub">
-                        Attendance rate over the month
-                    </p>
-
-                </div>
-
-            </div>
-
-            <div class="panel-body">
-
-                <div class="chart-box">
-
-                    <canvas id="monthlyChart"></canvas>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    <!-- Percentage -->
-
-    <div class="col-lg-4">
-
-        <div class="panel h-100">
-
-            <div class="panel-head">
-
-                <div>
-
-                    <h3>Today's Percentage</h3>
-
-                    <p class="sub">
-                        Presence Rate
-                    </p>
-
-                </div>
-
-            </div>
-
-            <div class="panel-body">
-
-                <div class="chart-box-sm">
-
-                    <canvas id="pctChart"></canvas>
-
-                    <div class="pct-center">
-
-                        <div class="big">
-
-                            <?= $attendanceRate ?>%
-
-                        </div>
-
-                        <div class="small">
-
-                            Present
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-<!-- ================= TABLE ================= -->
-
-<?php include "dashboard_table.php"; ?>
-
-<p class="text-center mt-4 mb-0"
-style="color:var(--muted-2);font-size:13px;">
-
-Attendance Management System · Powered by ZKTeco
+Attendance rate during the last 7 days
 
 </p>
 
@@ -323,21 +245,124 @@ Attendance Management System · Powered by ZKTeco
 
 </div>
 
-<!-- Bootstrap -->
+<div class="panel-body">
+
+<div class="chart-box">
+
+<canvas id="monthlyChart"></canvas>
+
+</div>
+
+<div class="legend-row">
+
+<span class="legend-item">
+
+<span class="legend-swatch" style="background:var(--success)"></span>
+
+Attendance rate
+
+</span>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+<!-- ================= TODAY'S PERCENTAGE ================= -->
+
+<div class="col-lg-4">
+
+    <div class="panel h-100">
+
+        <div class="panel-head">
+
+            <div>
+
+                <h3>Today's Percentage</h3>
+
+                <p class="sub">
+                    Presence Rate
+                </p>
+
+            </div>
+
+        </div>
+
+        <div class="panel-body">
+
+            <div class="chart-box-sm">
+
+                <canvas id="pctChart"></canvas>
+
+                <div class="pct-center">
+
+                    <div class="big" style="color:var(--primary);">
+
+                        <?= $attendanceRate ?>%
+
+                    </div>
+
+                    <div class="small">
+
+                        Present
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="legend-row justify-content-center">
+
+                <span class="legend-item">
+                    <span class="legend-swatch" style="background:var(--primary)"></span>
+                    Present
+                </span>
+
+                <span class="legend-item">
+                    <span class="legend-swatch" style="background:#EEF2F7"></span>
+                    Absent
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</div>
+
+<!-- ================= ATTENDANCE TABLE ================= -->
+
+<?php include "dashboard_table.php"; ?>
+<p class="text-center mt-4 mb-0"
+style="color:var(--muted-2);font-size:13px;">
+
+Attendance Management System · Powered by ZKTeco
+
+</p>
+
+</div> <!-- app-content -->
+
+</div> <!-- app-main -->
+
+<!-- ================= Bootstrap ================= -->
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- Lucide -->
+<!-- ================= Lucide ================= -->
 
 <script src="https://unpkg.com/lucide@latest"></script>
 
 <script>
-
 lucide.createIcons();
-
 </script>
 
-<!-- Dashboard JS -->
+<!-- ================= Dashboard ================= -->
 
 <script src="dashboard.js"></script>
 

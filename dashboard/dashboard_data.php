@@ -134,54 +134,30 @@ if(mysqli_num_rows($res)>0){
     TABLEAU ATTENDANCE
 ====================================================*/
 
-$sqlAttendanceTable = "
-
+$sql = "
 SELECT
 
-e.user_id,
+employees.id,
+employees.user_id,
+employees.first_name,
+employees.last_name,
+employees.department,
+employees.position,
 
-e.first_name,
+MIN(attendance.id) AS attendance_id,
 
-e.last_name,
+attendance.date,
 
-MIN(
-CASE
-WHEN a.type='IN'
-THEN a.time
-END
-) first_in,
+MIN(attendance.time) AS first_in,
+MAX(attendance.time) AS last_out,
 
-MAX(
-CASE
-WHEN a.type='OUT'
-THEN a.time
-END
-) last_out,
+COUNT(attendance.id) AS punches
 
-COUNT(a.id) punches
+FROM employees
 
-FROM employees e
+LEFT JOIN attendance
 
-LEFT JOIN attendance a
+ON employees.user_id = attendance.user_id
 
-ON e.user_id=a.user_id
-
-AND a.date='$selectedDate'
-
-GROUP BY
-
-e.user_id,
-
-e.first_name,
-
-e.last_name
-
-ORDER BY
-
-e.first_name
-
+AND attendance.date='$selectedDate'
 ";
-
-$resultAttendanceTable = mysqli_query($conn,$sqlAttendanceTable);
-
-?>
