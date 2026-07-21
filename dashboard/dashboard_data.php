@@ -1,163 +1,104 @@
 <?php
-
 include "../db.php";
 
 /*====================================================
-    CONFIGURATION
-====================================================*/
-
-$startDate = "2026-07-13";
-
-/*====================================================
-    DATE SELECTIONNEE
+    DATE SELECTED
 ====================================================*/
 
 $selectedDate = isset($_GET['date']) && $_GET['date'] != ""
     ? $_GET['date']
     : date("Y-m-d");
 
-if($selectedDate < $startDate){
-    $selectedDate = $startDate;
-}
-
 /*====================================================
-    TOTAL EMPLOYES
+    TOTAL EMPLOYEES
 ====================================================*/
 
-$sql = "SELECT COUNT(*) total FROM employees";
-
-$res = mysqli_query($conn,$sql);
-
+$sql = "SELECT COUNT(*) AS total FROM employees";
+$res = mysqli_query($conn, $sql);
 $row = mysqli_fetch_assoc($res);
-
 $totalEmployees = (int)$row['total'];
 
-
 /*====================================================
-    EMPLOYES PRESENTS
+    PRESENT EMPLOYEES
 ====================================================*/
 
-$sql = "
-
-SELECT COUNT(DISTINCT user_id) total
-
-FROM attendance
-
-WHERE date='$selectedDate'
-
-";
-
-$res = mysqli_query($conn,$sql);
-
+$sql = "SELECT COUNT(DISTINCT user_id) AS total FROM attendance WHERE date='$selectedDate'";
+$res = mysqli_query($conn, $sql);
 $row = mysqli_fetch_assoc($res);
-
 $totalPresent = (int)$row['total'];
 
-
 /*====================================================
-    EMPLOYES ABSENTS
+    ABSENT EMPLOYEES
 ====================================================*/
 
 $totalAbsent = $totalEmployees - $totalPresent;
-
-if($totalAbsent < 0){
-
-    $totalAbsent = 0;
-
-}
-
+if ($totalAbsent < 0) $totalAbsent = 0;
 
 /*====================================================
-    TOTAL DES POINTAGES
+    TOTAL PUNCHES
 ====================================================*/
 
-$sql = "
-
-SELECT COUNT(*) total
-
-FROM attendance
-
-WHERE date='$selectedDate'
-
-";
-
-$res = mysqli_query($conn,$sql);
-
+$sql = "SELECT COUNT(*) AS total FROM attendance WHERE date='$selectedDate'";
+$res = mysqli_query($conn, $sql);
 $row = mysqli_fetch_assoc($res);
-
 $totalPunches = (int)$row['total'];
 
-
 /*====================================================
-    POURCENTAGE
+    ATTENDANCE RATE
 ====================================================*/
 
 $attendanceRate = 0;
-
-if($totalEmployees > 0){
-
-    $attendanceRate = round(($totalPresent/$totalEmployees)*100);
-
+if ($totalEmployees > 0) {
+    $attendanceRate = round(($totalPresent / $totalEmployees) * 100);
 }
 
-
 /*====================================================
-    MACHINE
+    LATE EMPLOYEES
 ====================================================*/
 
-$sql = "
+$totalLate = 0;
+$lateQuery = mysqli_query($conn, "
+    SELECT COUNT(*) AS total FROM (
+        SELECT user_id, MIN(time) AS first_in
+        FROM attendance
+        WHERE date='$selectedDate'
+        GROUP BY user_id
+    ) t WHERE first_in > '09:00:00'
+");
+if ($lateQuery) {
+    $lateRow = mysqli_fetch_assoc($lateQuery);
+    $totalLate = (int)$lateRow['total'];
+}
 
-SELECT device_id
+/*====================================================
+    DEVICE
+====================================================*/
 
-FROM attendance
-
-ORDER BY id DESC
-
-LIMIT 1
-
-";
-
-$res = mysqli_query($conn,$sql);
-
-if(mysqli_num_rows($res)>0){
-
+$device = "ZKTeco";
+$res = mysqli_query($conn, "SELECT device_id FROM attendance ORDER BY id DESC LIMIT 1");
+if (mysqli_num_rows($res) > 0) {
     $device = mysqli_fetch_assoc($res)['device_id'];
-
-}else{
-
-    $device = "ZKTeco";
-
 }
 
-
 /*====================================================
-    TABLEAU ATTENDANCE
+    WEEKLY DATA FOR CHART
 ====================================================*/
 
-$sql = "
-SELECT
+$weeklyData = [];
+$weeklyLabels = [];
+for ($i = 6; $i >= 0; $i--) {
+    $d = date("Y-m-d", strtotime("-$i days", strtotime($selectedDate)));
+    $weeklyLabels[] = date("D", strtotime($d));
 
-employees.id,
-employees.user_id,
-employees.first_name,
-employees.last_name,
-employees.department,
-employees.position,
+    $res = mysqli_query($conn, "SELECT COUNT(DISTINCT user_id) AS present FROM attendance WHERE date='$d'");
+    $r = mysqli_fetch_assoc($res);
+    $present = (int)$r['present'];
 
-MIN(attendance.id) AS attendance_id,
+    if ($totalEmployees > 0) {
+        $weeklyData[] = round(($present / $totalEmployees) * 100);
+    } else {
+        $weeklyData[] = 0;
+    }
+}
 
-attendance.date,
-
-MIN(attendance.time) AS first_in,
-MAX(attendance.time) AS last_out,
-
-COUNT(attendance.id) AS punches
-
-FROM employees
-
-LEFT JOIN attendance
-
-ON employees.user_id = attendance.user_id
-
-AND attendance.date='$selectedDate'
-";
+?>

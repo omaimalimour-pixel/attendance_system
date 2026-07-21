@@ -1,178 +1,106 @@
 <?php
+session_start();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 include "../db.php";
 
+$pageTitle = "Add Employee";
+$currentPage = "employees";
+
 $message = "";
+$messageType = "";
 
-if($_SERVER["REQUEST_METHOD"]=="POST"){
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $user_id = mysqli_real_escape_string($conn, $_POST['user_id']);
+    $first_name = mysqli_real_escape_string($conn, $_POST['first_name']);
+    $last_name = mysqli_real_escape_string($conn, $_POST['last_name']);
+    $department = mysqli_real_escape_string($conn, $_POST['department']);
+    $position = mysqli_real_escape_string($conn, $_POST['position']);
 
-    $user_id = mysqli_real_escape_string($conn,$_POST['user_id']);
-    $first_name = mysqli_real_escape_string($conn,$_POST['first_name']);
-    $last_name = mysqli_real_escape_string($conn,$_POST['last_name']);
-    $department = mysqli_real_escape_string($conn,$_POST['department']);
-    $position = mysqli_real_escape_string($conn,$_POST['position']);
+    $check = mysqli_query($conn, "SELECT * FROM employees WHERE user_id='$user_id'");
 
-    $check = mysqli_query($conn,"SELECT * FROM employees WHERE user_id='$user_id'");
+    if (mysqli_num_rows($check) > 0) {
+        $message = "This User ID already exists.";
+        $messageType = "danger";
+    } else {
+        $sql = "INSERT INTO employees (user_id, first_name, last_name, department, position)
+                VALUES ('$user_id', '$first_name', '$last_name', '$department', '$position')";
 
-    if(mysqli_num_rows($check)>0){
-
-        $message = "<div class='error'>Ce User ID existe déjà.</div>";
-
-    }else{
-
-        $sql="INSERT INTO employees(user_id,first_name,last_name,department,position)
-              VALUES('$user_id','$first_name','$last_name','$department','$position')";
-
-        if(mysqli_query($conn,$sql)){
-
+        if (mysqli_query($conn, $sql)) {
             header("Location: employees.php");
             exit();
-
-        }else{
-
-            $message="<div class='error'>".mysqli_error($conn)."</div>";
-
+        } else {
+            $message = "Error: " . mysqli_error($conn);
+            $messageType = "danger";
         }
-
     }
-
 }
+
+include "includes/header.php";
 ?>
 
-<!DOCTYPE html>
-<html lang="fr">
-
-<head>
-
-<meta charset="UTF-8">
-
-<title>Add Employee</title>
-
-<style>
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Segoe UI,sans-serif;
-}
-
-body{
-background:#f5f7fb;
-}
-
-.container{
-
-width:500px;
-margin:40px auto;
-
-}
-
-.card{
-
-background:white;
-padding:30px;
-border-radius:15px;
-box-shadow:0 8px 20px rgba(0,0,0,.08);
-
-}
-
-h2{
-
-margin-bottom:25px;
-color:#1e293b;
-
-}
-
-input{
-
-width:100%;
-padding:12px;
-margin-bottom:15px;
-border:1px solid #ddd;
-border-radius:8px;
-font-size:15px;
-
-}
-
-button{
-
-width:100%;
-padding:14px;
-border:none;
-background:#2563eb;
-color:white;
-font-size:16px;
-border-radius:8px;
-cursor:pointer;
-
-}
-
-button:hover{
-
-background:#1d4ed8;
-
-}
-
-.back{
-
-display:block;
-margin-top:15px;
-text-align:center;
-text-decoration:none;
-color:#2563eb;
-
-}
-
-.error{
-
-background:#ffe4e4;
-color:#b91c1c;
-padding:10px;
-margin-bottom:15px;
-border-radius:8px;
-
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="container">
-
-<div class="card">
-
-<h2>Add Employee</h2>
-
-<?= $message; ?>
-
-<form method="POST">
-
-<input type="number" name="user_id" placeholder="User ID" required>
-
-<input type="text" name="first_name" placeholder="First Name" required>
-
-<input type="text" name="last_name" placeholder="Last Name" required>
-
-<input type="text" name="department" placeholder="Department" required>
-
-<input type="text" name="position" placeholder="Position" required>
-
-<button type="submit">
-Add Employee
-</button>
-
-</form>
-
-<a href="employees.php" class="back">
-← Back to Employees
-</a>
-
+<!-- Breadcrumb -->
+<div class="section-head">
+    <div>
+        <a href="employees.php" class="qa-btn">
+            <i data-lucide="arrow-left"></i> Back to Employees
+        </a>
+    </div>
 </div>
 
+<?php if ($message): ?>
+<div class="alert alert-<?= $messageType ?>">
+    <i data-lucide="alert-circle"></i>
+    <?= htmlspecialchars($message) ?>
+</div>
+<?php endif; ?>
+
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <h3>Add New Employee</h3>
+            <p class="sub">Fill in the employee information below</p>
+        </div>
+    </div>
+
+    <form method="POST">
+        <div class="form-panel">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>User ID (Device ID)</label>
+                    <input type="number" name="user_id" placeholder="Enter device user ID"
+                           value="<?= isset($_POST['user_id']) ? htmlspecialchars($_POST['user_id']) : '' ?>" required>
+                </div>
+                <div class="form-group">
+                    <label>First Name</label>
+                    <input type="text" name="first_name" placeholder="Enter first name"
+                           value="<?= isset($_POST['first_name']) ? htmlspecialchars($_POST['first_name']) : '' ?>" required>
+                </div>
+                <div class="form-group">
+                    <label>Last Name</label>
+                    <input type="text" name="last_name" placeholder="Enter last name"
+                           value="<?= isset($_POST['last_name']) ? htmlspecialchars($_POST['last_name']) : '' ?>" required>
+                </div>
+                <div class="form-group">
+                    <label>Department</label>
+                    <input type="text" name="department" placeholder="e.g. Engineering, HR, Sales"
+                           value="<?= isset($_POST['department']) ? htmlspecialchars($_POST['department']) : '' ?>" required>
+                </div>
+                <div class="form-group">
+                    <label>Position</label>
+                    <input type="text" name="position" placeholder="e.g. Developer, Manager"
+                           value="<?= isset($_POST['position']) ? htmlspecialchars($_POST['position']) : '' ?>" required>
+                </div>
+            </div>
+        </div>
+        <div class="form-actions">
+            <a href="employees.php" class="qa-btn">Cancel</a>
+            <button type="submit" class="qa-btn qa-primary">
+                <i data-lucide="user-plus"></i> Add Employee
+            </button>
+        </div>
+    </form>
 </div>
 
-</body>
-
-</html>
+<?php include "includes/footer.php"; ?>
