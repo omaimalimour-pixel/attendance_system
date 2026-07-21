@@ -8,43 +8,35 @@ if (!isset($currentPage)) $currentPage = "dashboard";
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($pageTitle) ?> - ChronoX Attendance</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title><?= htmlspecialchars($pageTitle) ?> — ChronoX</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="dashboard.css">
 </head>
 <body>
 
 <?php include __DIR__ . "/sidebar.php"; ?>
-
 <div class="backdrop" id="backdrop"></div>
 
-<div class="app-main" id="main">
+<div class="main" id="main">
 
-<header class="app-header">
-    <button class="icon-btn" id="toggleSidebar" title="Toggle Sidebar">
-        <i data-lucide="panel-left"></i>
+<header class="header">
+    <button class="header-toggle" id="toggleSidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
-    <div class="hdr-title me-auto">
+    <div class="header-title">
         <h1><?= htmlspecialchars($pageTitle) ?></h1>
         <p><?= date("l, F d, Y") ?></p>
     </div>
-    <div class="search-wrap">
-        <i data-lucide="search"></i>
-        <input type="text" placeholder="Search..." id="globalSearch">
+    <div class="header-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" placeholder="Search...">
     </div>
-    <div class="header-actions">
-        <button class="icon-btn" title="Notifications">
-            <i data-lucide="bell"></i>
-            <span class="dot-badge"></span>
-        </button>
-    </div>
-    <div class="avatar header-avatar">
+    <div class="header-avatar">
         <?= isset($_SESSION['username']) ? strtoupper(substr($_SESSION['username'], 0, 1)) : 'A' ?>
     </div>
 </header>
 
-<div class="app-content">
+<div class="content">

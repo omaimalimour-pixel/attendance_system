@@ -1,67 +1,58 @@
-<aside class="app-sidebar" id="sidebar">
+<aside class="sidebar" id="sidebar">
     <div class="brand">
-        <div class="logo">
-            <i data-lucide="fingerprint"></i>
+        <div class="brand-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6a6 6 0 1 0 6 6"/><circle cx="12" cy="12" r="2"/></svg>
         </div>
         <div class="brand-text">
-            <div class="brand-name">ZKTeco</div>
+            <div class="brand-name">Chrono<span>X</span></div>
             <div class="brand-sub">Attendance Suite</div>
         </div>
     </div>
 
-    <div class="nav-section-label">Menu</div>
-
+    <div class="nav-label">Menu</div>
     <a href="dashboard.php" class="side-link <?= ($currentPage == 'dashboard') ? 'active' : '' ?>">
-        <i data-lucide="layout-dashboard"></i>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         <span class="link-text">Dashboard</span>
     </a>
-
     <a href="employees.php" class="side-link <?= ($currentPage == 'employees') ? 'active' : '' ?>">
-        <i data-lucide="users"></i>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <span class="link-text">Employees</span>
     </a>
-
     <a href="attendance.php" class="side-link <?= ($currentPage == 'attendance') ? 'active' : '' ?>">
-        <i data-lucide="calendar-check"></i>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>
         <span class="link-text">Attendance</span>
     </a>
-
     <a href="users.php" class="side-link <?= ($currentPage == 'users') ? 'active' : '' ?>">
-        <i data-lucide="shield"></i>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         <span class="link-text">Users</span>
     </a>
 
-    <div class="nav-section-label">Reports</div>
-
+    <div class="nav-label">Reports</div>
     <a href="analytics.php" class="side-link <?= ($currentPage == 'analytics') ? 'active' : '' ?>">
-        <i data-lucide="bar-chart-3"></i>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>
         <span class="link-text">Analytics</span>
     </a>
-
     <a href="exports.php" class="side-link <?= ($currentPage == 'exports') ? 'active' : '' ?>">
-        <i data-lucide="file-text"></i>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6M9 15l3 3 3-3"/></svg>
         <span class="link-text">Exports</span>
     </a>
 
-    <div class="nav-section-label">System</div>
-
+    <div class="nav-label">System</div>
     <a href="sync_attendance.php" class="side-link <?= ($currentPage == 'sync') ? 'active' : '' ?>">
-        <i data-lucide="refresh-cw"></i>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
         <span class="link-text">Sync Device</span>
     </a>
 
     <div class="sidebar-footer">
-        <div class="user-mini">
-            <div class="avatar">
-                <?= isset($_SESSION['username']) ? strtoupper(substr($_SESSION['username'],0,1)) : 'A' ?>
-            </div>
-            <div class="um-text">
-                <div style="font-weight:600"><?= isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username']) : 'Admin' ?></div>
-                <div style="font-size:12px;color:gray"><?= isset($_SESSION['role']) ? htmlspecialchars($_SESSION['role']) : 'Administrator' ?></div>
+        <div class="user-card">
+            <div class="user-avatar"><?= isset($_SESSION['username']) ? strtoupper(substr($_SESSION['username'],0,1)) : 'A' ?></div>
+            <div class="user-info">
+                <div class="user-name"><?= isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username']) : 'Admin' ?></div>
+                <div class="user-role"><?= isset($_SESSION['role']) ? htmlspecialchars($_SESSION['role']) : 'Administrator' ?></div>
             </div>
         </div>
-        <a href="../logout.php" class="side-link logout-link" style="margin-top:10px;color:var(--danger);">
-            <i data-lucide="log-out"></i>
+        <a href="../logout.php" class="side-link logout-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             <span class="link-text">Logout</span>
         </a>
     </div>
