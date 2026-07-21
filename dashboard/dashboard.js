@@ -1,16 +1,9 @@
-/* ChronoX Dashboard JS */
-const sidebar = document.getElementById('sidebar');
-const main = document.getElementById('main');
-const toggle = document.getElementById('toggleSidebar');
-const backdrop = document.getElementById('backdrop');
-if(toggle){toggle.addEventListener('click',()=>{if(window.innerWidth<992){sidebar.classList.toggle('mobile-open');backdrop.classList.toggle('show')}else{sidebar.classList.toggle('collapsed');main.classList.toggle('expanded')}})}
-if(backdrop){backdrop.addEventListener('click',()=>{sidebar.classList.remove('mobile-open');backdrop.classList.remove('show')})}
-
-// Charts
-if(typeof Chart!=='undefined'){Chart.defaults.font.family="'Plus Jakarta Sans',sans-serif";Chart.defaults.plugins.legend.display=false}
-const wEl=document.getElementById('weeklyChart');
-if(wEl){const l=window.weeklyLabels||['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];const d=window.weeklyData||[0,0,0,0,0,0,0];new Chart(wEl,{type:'line',data:{labels:l,datasets:[{data:d,borderColor:'#4F46E5',backgroundColor:'rgba(79,70,229,.06)',borderWidth:2.5,tension:.4,fill:true,pointBackgroundColor:'#4F46E5',pointRadius:4,pointHoverRadius:6}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,max:100,grid:{color:'#F0F1F5'},ticks:{callback:v=>v+'%'}},x:{grid:{display:false}}}}})}
-const pEl=document.getElementById('pctChart');
-if(pEl){const r=window.attendanceRate||0;new Chart(pEl,{type:'doughnut',data:{labels:['Present','Absent'],datasets:[{data:[r,100-r],backgroundColor:['#4F46E5','#F0F1F5'],borderWidth:0,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'76%'}})}
-
-document.querySelectorAll('[data-confirm]').forEach(el=>{el.addEventListener('click',e=>{if(!confirm(el.dataset.confirm))e.preventDefault()})});
+const s=document.getElementById('sidebar'),m=document.getElementById('main'),t=document.getElementById('toggleSidebar'),b=document.getElementById('backdrop');
+if(t)t.addEventListener('click',()=>{if(innerWidth<992){s.classList.toggle('mobile-open');b.classList.toggle('show')}});
+if(b)b.addEventListener('click',()=>{s.classList.remove('mobile-open');b.classList.remove('show')});
+if(typeof Chart!=='undefined'){Chart.defaults.color='#7c8298';Chart.defaults.borderColor='rgba(255,255,255,.05)'}
+const wE=document.getElementById('weeklyChart');
+if(wE){new Chart(wE,{type:'line',data:{labels:window.wL||[],datasets:[{data:window.wD||[],borderColor:'#6c63ff',backgroundColor:'rgba(108,99,255,.08)',borderWidth:2,tension:.4,fill:true,pointBackgroundColor:'#6c63ff',pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:v=>v+'%'}},x:{grid:{display:false}}}}})}
+const pE=document.getElementById('pctChart');
+if(pE){const r=window.aR||0;new Chart(pE,{type:'doughnut',data:{datasets:[{data:[r,100-r],backgroundColor:['#6c63ff','rgba(255,255,255,.05)'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'78%',plugins:{legend:{display:false}}}})}
+document.querySelectorAll('[data-confirm]').forEach(e=>{e.addEventListener('click',ev=>{if(!confirm(e.dataset.confirm))ev.preventDefault()})});
