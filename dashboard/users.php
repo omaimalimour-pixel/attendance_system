@@ -2,6 +2,7 @@
 session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+date_default_timezone_set('Africa/Casablanca');
 
 include "../db.php";
 
@@ -10,6 +11,25 @@ $currentPage = "users";
 
 $message = "";
 $messageType = "";
+
+// Auto-create admin_users table if it doesn't exist
+$tableCheck = @mysqli_query($conn, "SHOW TABLES LIKE 'admin_users'");
+if (!$tableCheck || mysqli_num_rows($tableCheck) == 0) {
+    $createSql = "CREATE TABLE admin_users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(100) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
+        role VARCHAR(50) DEFAULT 'Administrator',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )";
+    mysqli_query($conn, $createSql);
+
+    // Create default admin user
+    $defaultPass = password_hash('admin123', PASSWORD_DEFAULT);
+    mysqli_query($conn, "INSERT INTO admin_users (username, password, role) VALUES ('admin', '$defaultPass', 'Administrator')");
+    $message = "Table created with default admin user (admin / admin123).";
+    $messageType = "success";
+}
 
 // Handle add user
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_user'])) {
