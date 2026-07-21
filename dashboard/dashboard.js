@@ -1,151 +1,94 @@
-// ==============================
-// SIDEBAR TOGGLE
-// ==============================
+/* ============================================
+   CHRONOX DASHBOARD — INTERACTIONS
+   ============================================ */
 
-const sidebar = document.getElementById("sidebar");
-const main = document.getElementById("main");
-const toggleBtn = document.getElementById("toggleSidebar");
-const backdrop = document.getElementById("backdrop");
+// ===== SIDEBAR TOGGLE =====
+const sidebar = document.getElementById('sidebar');
+const main = document.getElementById('main');
+const toggle = document.getElementById('toggleSidebar');
+const backdrop = document.getElementById('backdrop');
 
-if (toggleBtn) {
-    toggleBtn.addEventListener("click", function () {
+if (toggle) {
+    toggle.addEventListener('click', () => {
         if (window.innerWidth < 992) {
-            sidebar.classList.toggle("mobile-open");
-            backdrop.classList.toggle("show");
+            sidebar.classList.toggle('mobile-open');
+            backdrop.classList.toggle('show');
         } else {
-            sidebar.classList.toggle("collapsed");
-            main.classList.toggle("expanded");
+            sidebar.classList.toggle('collapsed');
+            main.classList.toggle('expanded');
         }
     });
 }
-
 if (backdrop) {
-    backdrop.addEventListener("click", function () {
-        sidebar.classList.remove("mobile-open");
-        backdrop.classList.remove("show");
+    backdrop.addEventListener('click', () => {
+        sidebar.classList.remove('mobile-open');
+        backdrop.classList.remove('show');
     });
 }
 
-// ==============================
-// WEEKLY ATTENDANCE CHART
-// ==============================
+// ===== CHART.JS DARK DEFAULTS =====
+if (typeof Chart !== 'undefined') {
+    Chart.defaults.color = '#9AA2C0';
+    Chart.defaults.borderColor = 'rgba(255,255,255,.06)';
+    Chart.defaults.plugins.tooltip.backgroundColor = '#1A1D2E';
+    Chart.defaults.plugins.tooltip.titleColor = '#EDF0FA';
+    Chart.defaults.plugins.tooltip.bodyColor = '#9AA2C0';
+    Chart.defaults.plugins.tooltip.borderColor = 'rgba(255,255,255,.12)';
+    Chart.defaults.plugins.tooltip.borderWidth = 1;
+    Chart.defaults.plugins.tooltip.cornerRadius = 10;
+    Chart.defaults.plugins.tooltip.padding = 12;
+}
 
-const monthlyCanvas = document.getElementById("monthlyChart");
-
-if (monthlyCanvas) {
-    const labels = window.weeklyLabels || ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+// ===== WEEKLY CHART =====
+const weeklyEl = document.getElementById('weeklyChart');
+if (weeklyEl) {
+    const labels = window.weeklyLabels || ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
     const data = window.weeklyData || [0,0,0,0,0,0,0];
-
-    new Chart(monthlyCanvas, {
-        type: "line",
+    new Chart(weeklyEl, {
+        type: 'line',
         data: {
-            labels: labels,
+            labels,
             datasets: [{
-                label: "Attendance Rate (%)",
-                data: data,
-                borderColor: "#22C55E",
-                backgroundColor: "rgba(34,197,94,0.08)",
-                borderWidth: 3,
-                tension: 0.4,
+                label: 'Attendance %',
+                data,
+                borderColor: '#818CF8',
+                backgroundColor: 'rgba(129,140,248,.08)',
+                borderWidth: 2.5,
+                tension: .4,
                 fill: true,
-                pointBackgroundColor: "#22C55E",
-                pointBorderColor: "#fff",
+                pointBackgroundColor: '#818CF8',
+                pointBorderColor: '#0A0C18',
                 pointBorderWidth: 2,
-                pointRadius: 5,
-                pointHoverRadius: 7
+                pointRadius: 4,
+                pointHoverRadius: 6
             }]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: "#0F172A",
-                    titleFont: { size: 12, weight: "600" },
-                    bodyFont: { size: 13 },
-                    padding: 12,
-                    cornerRadius: 10,
-                    callbacks: {
-                        label: function(ctx) {
-                            return ctx.parsed.y + "% attendance";
-                        }
-                    }
-                }
-            },
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
             scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    grid: { color: "#F1F5F9" },
-                    ticks: {
-                        callback: function(v) { return v + "%"; },
-                        font: { size: 11, weight: "500" },
-                        color: "#94A3B8"
-                    }
-                },
-                x: {
-                    grid: { display: false },
-                    ticks: {
-                        font: { size: 11, weight: "600" },
-                        color: "#64748B"
-                    }
-                }
+                y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255,255,255,.04)' }, ticks: { callback: v => v+'%' } },
+                x: { grid: { display: false } }
             }
         }
     });
 }
 
-// ==============================
-// TODAY'S PERCENTAGE DOUGHNUT
-// ==============================
-
-const pctCanvas = document.getElementById("pctChart");
-
-if (pctCanvas) {
+// ===== DOUGHNUT CHART =====
+const pctEl = document.getElementById('pctChart');
+if (pctEl) {
     const rate = window.attendanceRate || 0;
-    const absent = 100 - rate;
-
-    new Chart(pctCanvas, {
-        type: "doughnut",
+    new Chart(pctEl, {
+        type: 'doughnut',
         data: {
-            labels: ["Present", "Absent"],
-            datasets: [{
-                data: [rate, absent],
-                backgroundColor: ["#2563EB", "#EEF2F7"],
-                borderWidth: 0,
-                borderRadius: 6
-            }]
+            labels: ['Present','Absent'],
+            datasets: [{ data: [rate, 100-rate], backgroundColor: ['#6366F1','rgba(255,255,255,.06)'], borderWidth: 0, borderRadius: 6 }]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: "75%",
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: "#0F172A",
-                    padding: 12,
-                    cornerRadius: 10,
-                    callbacks: {
-                        label: function(ctx) {
-                            return ctx.label + ": " + ctx.parsed + "%";
-                        }
-                    }
-                }
-            }
-        }
+        options: { responsive: true, maintainAspectRatio: false, cutout: '76%', plugins: { legend: { display: false } } }
     });
 }
 
-// ==============================
-// CONFIRM DELETE ACTIONS
-// ==============================
-
-document.querySelectorAll("[data-confirm]").forEach(function(el) {
-    el.addEventListener("click", function(e) {
-        if (!confirm(el.dataset.confirm)) {
-            e.preventDefault();
-        }
-    });
+// ===== CONFIRM DELETE =====
+document.querySelectorAll('[data-confirm]').forEach(el => {
+    el.addEventListener('click', e => { if (!confirm(el.dataset.confirm)) e.preventDefault(); });
 });
