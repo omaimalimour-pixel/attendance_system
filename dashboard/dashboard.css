@@ -1,32 +1,45 @@
 /* ============================================
-   ZKTECO ATTENDANCE - UNIFIED DESIGN SYSTEM
+   CHRONOX ATTENDANCE - UNIFIED DESIGN SYSTEM
    ============================================ */
 
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
 :root {
-    --primary: #2563EB;
-    --primary-dark: #1D4ED8;
-    --primary-soft: #EFF4FF;
-    --success: #22C55E;
-    --success-soft: #E9FBF0;
+    --primary: #4F46E5;
+    --primary-dark: #4338CA;
+    --primary-soft: #EEF0FF;
+    --accent: #22D3EE;
+    --accent-2: #8B5CF6;
+    --grad: linear-gradient(120deg, #6366F1 0%, #22D3EE 100%);
+    --grad-soft: linear-gradient(120deg, #818CF8, #A78BFA);
+    --success: #10B981;
+    --success-soft: #E7FBF3;
     --warning: #F59E0B;
     --warning-soft: #FEF6E7;
-    --danger: #EF4444;
-    --danger-soft: #FDECEC;
-    --bg: #F8FAFC;
+    --danger: #F43F5E;
+    --danger-soft: #FEECEF;
+    --bg: #F6F7FB;
     --card: #FFFFFF;
-    --border: #EAEEF3;
-    --text: #0F172A;
-    --muted: #64748B;
-    --muted-2: #94A3B8;
-    --radius: 16px;
-    --sidebar-w: 264px;
+    --border: #ECEEF4;
+    --text: #0B1020;
+    --muted: #667089;
+    --muted-2: #98A0B6;
+    --radius: 18px;
+    --radius-sm: 12px;
+    --sidebar-w: 268px;
     --sidebar-w-collapsed: 82px;
-    --shadow-sm: 0 1px 2px rgba(15,23,42,.04), 0 1px 3px rgba(15,23,42,.06);
-    --shadow-md: 0 4px 16px rgba(15,23,42,.06), 0 2px 6px rgba(15,23,42,.04);
-    --shadow-lg: 0 18px 40px rgba(15,23,42,.10);
+    --shadow-sm: 0 1px 2px rgba(11,16,32,.04), 0 1px 3px rgba(11,16,32,.05);
+    --shadow-md: 0 6px 20px rgba(11,16,32,.06), 0 2px 6px rgba(11,16,32,.04);
+    --shadow-lg: 0 24px 50px rgba(11,16,32,.12);
+    --ring: 0 0 0 4px rgba(79,70,229,.14);
 }
 
 * { -webkit-font-smoothing: antialiased; box-sizing: border-box; }
+
+h1, h2, h3, h4, .brand-name, .kpi-value, .stat-value, .pct-center .big {
+    font-family: 'Sora', 'Inter', system-ui, sans-serif;
+    letter-spacing: -.02em;
+}
 
 
 body {
@@ -521,3 +534,77 @@ table.att tbody tr:last-child td { border-bottom: 0; }
 .mb-0 { margin-bottom: 0; }
 .mb-4 { margin-bottom: 1.5rem; }
 .g-3 { gap: 1rem; }
+
+
+/* ============================================
+   CHRONOX PREMIUM POLISH (overrides)
+   ============================================ */
+
+body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+
+/* Sharper brand mark with gradient */
+.brand .logo {
+    background: var(--grad);
+    box-shadow: 0 8px 22px rgba(79,70,229,.4);
+}
+.brand .brand-name {
+    background: var(--grad);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+/* Sidebar: refined active pill with gradient bar */
+.side-link.active {
+    background: linear-gradient(120deg, rgba(99,102,241,.12), rgba(34,211,238,.08));
+    color: var(--primary);
+}
+.side-link.active::before { background: var(--grad); width: 3px; height: 26px; }
+
+/* Header: crisper glass */
+.app-header {
+    background: rgba(255,255,255,.75);
+    border-bottom: 1px solid var(--border);
+}
+
+/* Avatars use brand gradient */
+.avatar { background: var(--grad); box-shadow: 0 6px 16px rgba(79,70,229,.3); }
+
+/* KPI cards: sharper, subtle top accent line on hover */
+.kpi-card { border-radius: var(--radius); }
+.kpi-card::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--grad); opacity: 0; transition: opacity .25s;
+}
+.kpi-card:hover::before { opacity: 1; }
+
+/* Primary buttons get the gradient */
+.qa-primary {
+    background: var(--grad); border: none; color: #fff;
+    box-shadow: 0 8px 20px rgba(79,70,229,.28);
+}
+.qa-primary:hover { filter: brightness(1.05); box-shadow: 0 12px 26px rgba(79,70,229,.4); color: #fff; }
+
+/* Panels: slightly stronger radius + hairline */
+.panel { border-radius: var(--radius); }
+.panel-head { background: linear-gradient(180deg, rgba(246,247,251,.5), transparent); }
+
+/* Inputs: refined focus ring */
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus,
+.search-filter-bar input:focus, .search-filter-bar select:focus,
+.search-wrap input:focus, .date-field:focus-within {
+    border-color: var(--primary); box-shadow: var(--ring);
+}
+
+/* Stat mini icon rings */
+.stat-mini .stat-icon { box-shadow: inset 0 0 0 1px rgba(11,16,32,.03); }
+
+/* Table header uppercase tracking refinement */
+table.att thead th { background: #FAFBFE; letter-spacing: .05em; }
+table.att tbody tr:hover { background: linear-gradient(90deg, rgba(99,102,241,.05), rgba(34,211,238,.03)); }
+
+/* Scrollbar */
+.table-scroll::-webkit-scrollbar { height: 9px; width: 9px; }
+.table-scroll::-webkit-scrollbar-thumb { background: #D5DAE6; border-radius: 20px; }
+.table-scroll::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+/* Emp avatar gradient fallback */
+.emp-av { box-shadow: 0 4px 10px rgba(11,16,32,.12); }

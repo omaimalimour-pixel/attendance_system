@@ -1,7 +1,6 @@
 <?php
 session_start();
 
-// If already logged in, redirect to dashboard
 if (isset($_SESSION['user_id'])) {
     header("Location: dashboard/dashboard.php");
     exit;
@@ -17,7 +16,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $result = mysqli_query($conn, "SELECT * FROM admin_users WHERE username='$username'");
 
-    if (mysqli_num_rows($result) > 0) {
+    if ($result && mysqli_num_rows($result) > 0) {
         $user = mysqli_fetch_assoc($result);
         if (password_verify($password, $user['password'])) {
             $_SESSION['user_id'] = $user['id'];
@@ -26,7 +25,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             header("Location: dashboard/dashboard.php");
             exit;
         } else {
-            $error = "Invalid password.";
+            $error = "Invalid password. Please try again.";
         }
     } else {
         $error = "User not found.";
@@ -38,47 +37,76 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - ZKTeco Attendance</title>
+    <title>Sign in — ChronoX</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="dashboard/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="landing.css">
+    <link rel="stylesheet" href="auth.css">
 </head>
-<body class="login-page">
-    <div class="login-card">
-        <div class="login-logo">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 10a2 2 0 0 0-2 2c0 1.02.76 2 2 2 1.24 0 2-.98 2-2a2 2 0 0 0-2-2z"/>
-                <path d="M12 2a10 10 0 0 0-6.88 17.23l1.5-1.5A7.98 7.98 0 0 1 4 12a8 8 0 1 1 13.38 5.73l1.5 1.5A10 10 0 0 0 12 2z"/>
-                <path d="M12 6a6 6 0 0 0-4.24 10.24l1.5-1.5A3.98 3.98 0 0 1 8 12a4 4 0 1 1 6.74 2.74l1.5 1.5A6 6 0 0 0 12 6z"/>
-            </svg>
-        </div>
-        <h1>Welcome Back</h1>
-        <p class="login-sub">Sign in to your attendance management system</p>
+<body>
 
-        <?php if ($error): ?>
-        <div class="alert alert-danger" style="margin-bottom:20px;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/>
-                <line x1="9" y1="9" x2="15" y2="15"/>
-            </svg>
-            <?= htmlspecialchars($error) ?>
-        </div>
-        <?php endif; ?>
+<div class="bg-canvas-wrap"></div>
+<div class="grain"></div>
 
-        <form method="POST">
-            <div class="form-group">
-                <label>Username</label>
-                <input type="text" name="username" placeholder="Enter your username"
-                       value="<?= isset($_POST['username']) ? htmlspecialchars($_POST['username']) : '' ?>" required>
+<div class="auth-shell">
+    <!-- LEFT : BRAND PANEL -->
+    <aside class="auth-aside">
+        <a href="index.php" class="logo">
+            <span class="logo-mark">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6a6 6 0 1 0 6 6"/><circle cx="12" cy="12" r="2"/></svg>
+            </span>
+            <span class="logo-text">Chrono<span>X</span></span>
+        </a>
+        <div class="auth-aside-body">
+            <h2>Command your <span class="grad-text">workforce</span> in real time.</h2>
+            <p>Sign in to access live attendance insights, biometric sync, and beautiful analytics.</p>
+            <ul class="auth-points">
+                <li><span class="ap-ic"></span> Real-time biometric attendance</li>
+                <li><span class="ap-ic"></span> Instant reports & CSV exports</li>
+                <li><span class="ap-ic"></span> Enterprise-grade security</li>
+            </ul>
+        </div>
+        <div class="auth-aside-foot">© <?= date('Y') ?> ChronoX</div>
+        <div class="auth-orb"></div>
+    </aside>
+
+    <!-- RIGHT : FORM -->
+    <main class="auth-main">
+        <div class="auth-card">
+            <a href="index.php" class="auth-back">← Back to home</a>
+            <h1>Welcome back</h1>
+            <p class="auth-sub">Sign in to your ChronoX dashboard</p>
+
+            <?php if ($error): ?>
+            <div class="auth-alert">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                <?= htmlspecialchars($error) ?>
             </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" name="password" placeholder="Enter your password" required>
+            <?php endif; ?>
+
+            <form method="POST" class="auth-form">
+                <div class="auth-field">
+                    <label>Username</label>
+                    <input type="text" name="username" placeholder="Enter your username"
+                           value="<?= isset($_POST['username']) ? htmlspecialchars($_POST['username']) : '' ?>" required autofocus>
+                </div>
+                <div class="auth-field">
+                    <label>Password</label>
+                    <input type="password" name="password" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg auth-submit">
+                    <span>Sign In</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+            </form>
+
+            <div class="auth-hint">
+                First time? Run <code>setup.php</code> to create the default admin
+                (<b>admin</b> / <b>admin123</b>).
             </div>
-            <button type="submit" class="login-btn">Sign In</button>
-        </form>
-    </div>
+        </div>
+    </main>
+</div>
+
 </body>
 </html>
