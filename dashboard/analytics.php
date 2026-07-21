@@ -112,7 +112,7 @@ include "includes/header.php";
                     <td class="mono"><?= $no++ ?></td>
                     <td>
                         <div class="emp">
-                            <div class="emp-av" style="background:#2563EB">
+                            <div class="emp-av" style="background:linear-gradient(135deg,#6366F1,#8B5CF6)">
                                 <?= strtoupper(substr($row['first_name'], 0, 1)) ?>
                             </div>
                             <div>
@@ -147,8 +147,8 @@ if (mc) {
             datasets: [{
                 label: "Employees Present",
                 data: window.analyticsMonthlyData,
-                backgroundColor: "rgba(37,99,235,0.15)",
-                borderColor: "#2563EB",
+                backgroundColor: "rgba(91,84,232,0.18)",
+                borderColor: "#5B54E8",
                 borderWidth: 2,
                 borderRadius: 8
             }]
@@ -157,8 +157,8 @@ if (mc) {
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                y: { beginAtZero: true, grid: { color: "#F1F5F9" } },
-                x: { grid: { display: false } }
+                y: { beginAtZero: true, border:{display:false}, grid: { color: "#F1F2F6" } },
+                x: { border:{display:false}, grid: { display: false } }
             }
         }
     });
@@ -172,7 +172,7 @@ if (dc) {
             labels: window.deptLabels,
             datasets: [{
                 data: window.deptData,
-                backgroundColor: ["#2563EB","#7C3AED","#059669","#D97706","#DC2626","#0891B2","#EC4899"],
+                backgroundColor: ["#5B54E8","#8B5CF6","#0EA372","#D98A0B","#E5484D","#0BA5C7","#EC4899"],
                 borderWidth: 0, borderRadius: 4
             }]
         },
