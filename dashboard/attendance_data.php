@@ -3,8 +3,8 @@
 /* ===========================
    FILTERS
 =========================== */
+$selectedDate == date("y-m-d");
 
-$selectedDate = date("Y-m-d");
 
 if(isset($_GET['date']) && !empty($_GET['date'])){
     $selectedDate = $_GET['date'];
