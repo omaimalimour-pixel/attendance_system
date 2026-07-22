@@ -26,3 +26,9 @@ for ($i = 6; $i >= 0; $i--) {
     $p = (int) db_val("SELECT COUNT(DISTINCT user_id) FROM attendance WHERE date=?", [$d]);
     $weeklyData[] = $totalEmployees > 0 ? round(($p / $totalEmployees) * 100) : 0;
 }
+
+// Fingerprint enrolment pending count (for dashboard KPI)
+$pendingEnrollments = 0;
+if (db_table_exists('enrollment_requests')) {
+    $pendingEnrollments = (int) db_val("SELECT COUNT(*) FROM enrollment_requests WHERE status IN ('pending','failed')");
+}

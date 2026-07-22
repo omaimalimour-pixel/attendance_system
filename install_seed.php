@@ -46,13 +46,14 @@ if (column_exists('employees', 'department')) {
     step(true, 'Migrate existing employee departments (' . count($legacy) . ' found)');
 }
 
-/* Devices (5) — one biometric machine installed per department */
+/* Devices — ZKTeco IN01 at 192.168.100.201 is the REAL machine (Engineering dept).
+   The other 4 are seeded with placeholder IPs for when those machines are added. */
 $deviceSeed = [
-    ['ENG',   'Engineering Entrance',  '192.168.100.201', 'Building A · Floor 2'],
-    ['HR',    'HR Office Terminal',    '192.168.100.202', 'Building A · Floor 1'],
-    ['SALES', 'Sales Floor Reader',    '192.168.100.203', 'Building B · Floor 1'],
-    ['OPS',   'Warehouse Gate',        '192.168.100.204', 'Warehouse · Dock 1'],
-    ['FIN',   'Finance Wing',          '192.168.100.205', 'Building A · Floor 3'],
+    ['ENG',   'ZKTeco IN01 – Engineering', '192.168.100.201', 'Engineering Floor'],
+    ['HR',    'ZKTeco – HR Office',         '192.168.100.202', 'HR Office'],
+    ['SALES', 'ZKTeco – Sales Floor',       '192.168.100.203', 'Sales Floor'],
+    ['OPS',   'ZKTeco – Operations',        '192.168.100.204', 'Warehouse'],
+    ['FIN',   'ZKTeco – Finance',           '192.168.100.205', 'Finance Office'],
 ];
 foreach ($deviceSeed as [$code, $name, $ip, $loc]) {
     $deptId = db_val("SELECT id FROM departments WHERE code=?", [$code]);
