@@ -5,7 +5,22 @@ $currentPage = "attendance";
 include "attendance_data.php";
 $canManage = can('attendance.manage');
 include "includes/header.php";
+
+// Show sync result banner if redirected back from sync
+$synced   = isset($_GET['synced']);
+$imported = (int)($_GET['imported'] ?? 0);
 ?>
+
+<?php if ($synced): ?>
+<div class="alert alert-<?= $imported > 0 ? 'success' : 'warning' ?>" style="margin-bottom:18px">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:17px;height:17px;flex-shrink:0"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+  <?php if ($imported > 0): ?>
+    Sync complete — <strong><?= $imported ?> new punch<?= $imported === 1 ? '' : 'es' ?></strong> imported from the device. Attendance updated.
+  <?php else: ?>
+    Sync complete — no new punches found (device may already be up to date).
+  <?php endif; ?>
+</div>
+<?php endif; ?>
 
 <div class="stats-row">
   <div class="stat-mini"><div class="kpi-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="kpi-value" style="font-size:22px"><?= $totalEmployees ?></div><div class="kpi-sub">Total</div></div></div>
@@ -15,7 +30,17 @@ include "includes/header.php";
 </div>
 
 <div class="panel">
-  <div class="panel-head"><div><h3>Attendance Records</h3><p class="sub"><?= e(date("l, F j, Y", strtotime($selectedDate))) ?></p></div><a href="sync_attendance.php" class="btn btn-primary">Sync Devices</a></div>
+  <div class="panel-head"><div><h3>Attendance Records</h3><p class="sub"><?= e(date("l, F j, Y", strtotime($selectedDate))) ?></p></div>
+    <div style="display:flex;gap:8px">
+      <form method="post" action="sync_attendance.php" style="display:inline">
+        <?= csrf_field() ?><input type="hidden" name="scope" value="all">
+        <button class="btn btn-primary" title="Pull punches from the ZKTeco device right now">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+          Sync Device Now
+        </button>
+      </form>
+    </div>
+  </div>
   <form method="GET" class="search-bar">
     <input type="date" name="date" value="<?= e($selectedDate) ?>" style="min-width:150px;flex:0;">
     <input type="text" name="search" placeholder="Search name, ID, department..." value="<?= e($search) ?>">
