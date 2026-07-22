@@ -328,7 +328,7 @@ $loggedIn = isset($_SESSION['user_id']);
                 <h4>Access</h4>
                 <a href="login.php">Sign in</a>
                 <a href="login.php">Get Started</a>
-                <a href="setup.php">Setup</a>
+                <a href="install.php">Setup</a>
             </div>
         </div>
     </div>

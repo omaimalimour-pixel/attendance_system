@@ -1,34 +1,49 @@
 <?php
-session_start();
+require_once __DIR__ . '/core/auth.php';
+cx_session_start();
+
+// Not installed yet → send to installer
+if (!db_table_exists('admin_users')) {
+    header('Location: install.php');
+    exit;
+}
 
 if (isset($_SESSION['user_id'])) {
     header("Location: dashboard/dashboard.php");
     exit;
 }
 
-include "db.php";
-
 $error = "";
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = mysqli_real_escape_string($conn, $_POST['username']);
-    $password = $_POST['password'];
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    csrf_verify();
+    $username = inp($_POST, 'username');
+    $password = (string)($_POST['password'] ?? '');
 
-    $result = mysqli_query($conn, "SELECT * FROM admin_users WHERE username='$username'");
+    if ($username === '' || $password === '') {
+        $error = "Please enter your username and password.";
+    } elseif (login_is_locked($username)) {
+        $error = "Too many failed attempts. Please try again in a few minutes.";
+    } else {
+        // Prepared statement — no SQL injection possible
+        $user = db_one("SELECT * FROM admin_users WHERE username=? AND status='active' LIMIT 1", [$username]);
 
-    if ($result && mysqli_num_rows($result) > 0) {
-        $user = mysqli_fetch_assoc($result);
-        if (password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['id'];
+        if ($user && password_verify($password, $user['password'])) {
+            // Prevent session fixation
+            session_regenerate_id(true);
+            $_SESSION['user_id']  = (int) $user['id'];
             $_SESSION['username'] = $user['username'];
-            $_SESSION['role'] = $user['role'];
+            $_SESSION['name']     = $user['name'] ?? $user['username'];
+            $_SESSION['role']     = $user['role'] ?? 'Viewer';
+            login_reset($username);
+            db_exec("UPDATE admin_users SET last_login_at=NOW() WHERE id=?", [(int)$user['id']]);
+            audit('auth.login', 'admin_users', (int)$user['id']);
             header("Location: dashboard/dashboard.php");
             exit;
-        } else {
-            $error = "Invalid password. Please try again.";
         }
-    } else {
-        $error = "User not found.";
+        // Generic message (don't reveal whether the username exists)
+        login_record_fail($username);
+        $error = "Invalid username or password.";
     }
 }
 ?>
@@ -85,10 +100,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <?php endif; ?>
 
             <form method="POST" class="auth-form">
+                <?= csrf_field() ?>
                 <div class="auth-field">
                     <label>Username</label>
                     <input type="text" name="username" placeholder="Enter your username"
-                           value="<?= isset($_POST['username']) ? htmlspecialchars($_POST['username']) : '' ?>" required autofocus>
+                           value="<?= isset($_POST['username']) ? e($_POST['username']) : '' ?>" required autofocus>
                 </div>
                 <div class="auth-field">
                     <label>Password</label>
@@ -101,7 +117,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </form>
 
             <div class="auth-hint">
-                First time? Run <code>setup.php</code> to create the default admin
+                First time? Run <code>install.php</code> to set up the database and default admin
                 (<b>admin</b> / <b>admin123</b>).
             </div>
         </div>

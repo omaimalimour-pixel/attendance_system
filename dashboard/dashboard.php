@@ -1,6 +1,5 @@
 <?php
-session_start();
-date_default_timezone_set('Africa/Casablanca');
+require __DIR__ . '/bootstrap.php';
 $pageTitle="Dashboard"; $currentPage="dashboard";
 include "dashboard_data.php";
 include "includes/header.php";

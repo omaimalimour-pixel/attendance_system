@@ -1,18 +1,22 @@
 <?php
-include "../db.php";
+require __DIR__ . '/bootstrap.php';
+require_perm('export');
 
-$result = mysqli_query($conn, "SELECT user_id, first_name, last_name, department, position, created_at FROM employees ORDER BY id ASC");
+$rows = db_all(
+    "SELECT e.user_id, e.first_name, e.last_name,
+            COALESCE(dep.name,'') AS department, COALESCE(e.position,'') AS position,
+            COALESCE(e.email,'') AS email, COALESCE(e.phone,'') AS phone,
+            e.status, e.created_at
+     FROM employees e
+     LEFT JOIN departments dep ON dep.id = e.department_id
+     ORDER BY e.id ASC"
+);
 
+audit('export.employees');
 header('Content-Type: text/csv');
 header('Content-Disposition: attachment; filename="employees_' . date('Y-m-d') . '.csv"');
-
-$output = fopen('php://output', 'w');
-fputcsv($output, ['User ID', 'First Name', 'Last Name', 'Department', 'Position', 'Created At']);
-
-while ($row = mysqli_fetch_assoc($result)) {
-    fputcsv($output, $row);
-}
-
-fclose($output);
+$out = fopen('php://output', 'w');
+fputcsv($out, ['User ID','First Name','Last Name','Department','Position','Email','Phone','Status','Created']);
+foreach ($rows as $r) { fputcsv($out, $r); }
+fclose($out);
 exit;
-?>
