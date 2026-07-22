@@ -1,15 +1,15 @@
 <?php
 /**
- * ChronoX — AJAX Sync endpoint
- * Returns JSON. Never gets killed by PHP timeout.
+ * ChronoX — AJAX Sync
  *
- * ZKTeco attendance record structure:
- *   $a['uid']  = internal device index (auto-assigned: 1, 2, 3...)
- *   $a['id']   = userid STRING you entered when enrolling (e.g. "990")
- *   $a['type'] = 0=IN, 1=OUT
+ * ROOT CAUSE of "Fidae shows absent":
+ * When enrolled at the terminal (Menu → Enroll FP → scan finger),
+ * the ID field is left blank → $a['id'] = "" in attendance records.
+ * Previous code: (int)"" = 0 → no employee match → silently skipped.
  *
- * CRITICAL: We use $a['id'] (userid string) to match employees.user_id.
- * We import ALL punches regardless of employee existence.
+ * FIX: call getUser() first to build a map of
+ *   device_uid (int, always set) → employee user_id (int)
+ * then resolve each punch via that map.
  */
 set_time_limit(0);
 ignore_user_abort(false);
@@ -29,16 +29,13 @@ csrf_verify();
 $scope    = inp($_POST, 'scope', 'all');
 $deviceId = (int) inp($_POST, 'device_id');
 
-if ($scope === 'one') {
-    $devs = db_all("SELECT * FROM devices WHERE id=? AND status='active'", [$deviceId]);
-} else {
-    $devs = db_all("SELECT * FROM devices WHERE status='active' ORDER BY name");
-}
+$devs = $scope === 'one'
+    ? db_all("SELECT * FROM devices WHERE id=? AND status='active'", [$deviceId])
+    : db_all("SELECT * FROM devices WHERE status='active' ORDER BY name");
 
-if (!$devs) { echo json_encode(['ok' => false, 'error' => 'No active devices found.']); exit; }
+if (!$devs) { echo json_encode(['ok' => false, 'error' => 'No active devices.']); exit; }
 if (!file_exists(__DIR__ . '/../vendor/autoload.php')) {
-    echo json_encode(['ok' => false, 'error' => 'ZKTeco library not installed. Run: composer install']);
-    exit;
+    echo json_encode(['ok' => false, 'error' => 'Run composer install first.']); exit;
 }
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -52,27 +49,41 @@ foreach ($devs as $dev) {
         @socket_set_option($zk->_zkclient, SOL_SOCKET, SO_RCVTIMEO, ['sec' => 5, 'usec' => 0]);
 
         if (!$zk->connect()) {
-            $msg = "Cannot connect to {$dev['ip_address']}:{$dev['port']} — device offline";
+            $msg = "Cannot connect to {$dev['ip_address']}:{$dev['port']}";
             db_exec("INSERT INTO sync_logs (device_id,imported,skipped,status,message,synced_by) VALUES (?,0,0,'error',?,?)",
                 [$dev['id'], $msg, current_user()['username'] ?? 'system']);
             $results[] = ['device'=>$dev['name'],'ip'=>$dev['ip_address'],'imported'=>0,'skipped'=>0,'status'=>'error','message'=>$msg];
             continue;
         }
 
+        // ── Step 1: build device_uid → employee_user_id map ───────────
+        // getUser() returns array keyed by userid string, each with 'uid' (internal index)
+        // e.g. ["990" => {uid:3, name:"FIDAE"}, "2007" => {uid:1, ...}]
+        $deviceUserList = $zk->getUser();
+        $uidMap = []; // device internal uid (int) → employee user_id (int)
+        foreach ((array)$deviceUserList as $userIdStr => $u) {
+            $internalUid = (int)($u['uid'] ?? 0);
+            $employeeId  = (int)trim((string)$userIdStr);
+            if ($internalUid > 0 && $employeeId > 0) {
+                $uidMap[$internalUid] = $employeeId;
+            }
+        }
+
+        // ── Step 2: get attendance punches ────────────────────────────
         $rows = $zk->getAttendance();
         $zk->disconnect();
 
         if (!is_array($rows)) {
-            $msg = "Device returned no data.";
+            $msg = "No attendance data returned.";
             db_exec("INSERT INTO sync_logs (device_id,imported,skipped,status,message,synced_by) VALUES (?,0,0,'error',?,?)",
                 [$dev['id'], $msg, current_user()['username'] ?? 'system']);
             $results[] = ['device'=>$dev['name'],'ip'=>$dev['ip_address'],'imported'=>0,'skipped'=>0,'status'=>'error','message'=>$msg];
             continue;
         }
 
+        // ── Step 3: import each punch ─────────────────────────────────
         foreach ($rows as $a) {
             if (!isset($a['timestamp'])) { $skipped++; continue; }
-
             $ts = strtotime($a['timestamp']);
             if ($ts === false || $ts <= 0) { $skipped++; continue; }
 
@@ -80,55 +91,55 @@ foreach ($devs as $dev) {
             $time = date('H:i:s', $ts);
             $type = (isset($a['type']) && (int)$a['type'] === 1) ? 'OUT' : 'IN';
 
-            // Use $a['id'] (the userid the employee registered with, e.g. "990")
-            // Fall back to $a['uid'] (internal device index) if id is empty
-            $rawId = trim((string)($a['id'] ?? ''));
-            $uid   = $rawId !== '' ? (int)$rawId : (int)($a['uid'] ?? 0);
+            // Resolve employee user_id:
+            // 1st: look up device's internal uid in the map we built above
+            // 2nd: fall back to $a['id'] string (if the user typed their ID when enrolling)
+            // 3rd: use $a['uid'] directly as last resort
+            $internalUid = (int)($a['uid'] ?? 0);
+            if (isset($uidMap[$internalUid])) {
+                $userId = $uidMap[$internalUid];   // ← best: from getUser() map
+            } else {
+                $rawId  = trim((string)($a['id'] ?? ''));
+                $userId = $rawId !== '' ? (int)$rawId : $internalUid;
+            }
 
-            if ($uid <= 0) { $skipped++; continue; }
+            if ($userId <= 0) { $skipped++; continue; }
 
-            // Deduplicate by (user_id + date + time + type) ONLY
-            // Do NOT include device_id — old records have device_id='ZKTeco' string
-            // and new ones have device_id=INT, causing incorrect re-imports
-            $dup = db_val(
-                "SELECT id FROM attendance WHERE user_id=? AND date=? AND time=? AND type=?",
-                [$uid, $date, $time, $type]
-            );
+            // Deduplicate: (user_id + date + time + type) only
+            // Do NOT include device_id — old records have device_id=0 (string stored as int)
+            $dup = db_val("SELECT id FROM attendance WHERE user_id=? AND date=? AND time=? AND type=?",
+                [$userId, $date, $time, $type]);
             if ($dup) { $skipped++; continue; }
 
-            // Import this punch — always, even if employee not in employees table
-            db_exec(
-                "INSERT INTO attendance (user_id, device_id, date, time, type, raw) VALUES (?,?,?,?,?,?)",
-                [$uid, $dev['id'], $date, $time, $type, json_encode($a)]
-            );
+            db_exec("INSERT INTO attendance (user_id, device_id, date, time, type, raw) VALUES (?,?,?,?,?,?)",
+                [$userId, $dev['id'], $date, $time, $type, json_encode($a)]);
             $imported++;
 
-            // Auto-create placeholder employee if UID unknown (no punch is ever lost)
-            $empExists = db_val("SELECT id FROM employees WHERE user_id=?", [$uid]);
-            if (!$empExists) {
+            // Auto-create placeholder employee for unknown user IDs
+            if (!db_val("SELECT id FROM employees WHERE user_id=?", [$userId])) {
                 $nameOnDevice = trim((string)($a['name'] ?? ''));
-                db_exec("INSERT IGNORE INTO employees (user_id, first_name, last_name, status) VALUES (?,?,?,'active')",
-                    [$uid, $nameOnDevice ?: 'Employee', (string)$uid]);
+                db_exec("INSERT IGNORE INTO employees (user_id,first_name,last_name,status) VALUES (?,?,?,'active')",
+                    [$userId, $nameOnDevice ?: 'Unknown', (string)$userId]);
             }
         }
 
-        $message = "Imported $imported new punch".($imported===1?'':'es').", skipped $skipped duplicates.";
+        $message = "Imported $imported punch".($imported===1?'':'es').", skipped $skipped duplicates.";
         db_exec("INSERT INTO sync_logs (device_id,imported,skipped,status,message,synced_by) VALUES (?,?,?,'success',?,?)",
             [$dev['id'],$imported,$skipped,$message,current_user()['username']??'system']);
         db_exec("UPDATE devices SET last_sync_at=NOW() WHERE id=?", [$dev['id']]);
 
     } catch (\Throwable $e) {
         $status  = 'error';
-        $message = 'Error: ' . $e->getMessage();
+        $message = 'Error: '.$e->getMessage();
         db_exec("INSERT INTO sync_logs (device_id,imported,skipped,status,message,synced_by) VALUES (?,?,?,'error',?,?)",
             [$dev['id'],$imported,$skipped,$message,current_user()['username']??'system']);
     }
 
-    $results[] = ['device'=>$dev['name'],'ip'=>$dev['ip_address'],'imported'=>$imported,'skipped'=>$skipped,'status'=>$status,'message'=>$message];
+    $results[] = ['device'=>$dev['name'],'ip'=>$dev['ip_address'],
+                  'imported'=>$imported,'skipped'=>$skipped,'status'=>$status,'message'=>$message];
     $totalImp += $imported;
     $totalSkp += $skipped;
 }
 
-audit('devices.sync','devices',$scope==='one'?$deviceId:'all');
-
+audit('devices.sync', 'devices', $scope==='one' ? $deviceId : 'all');
 echo json_encode(['ok'=>true,'total_imported'=>$totalImp,'total_skipped'=>$totalSkp,'devices'=>$results]);
