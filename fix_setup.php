@@ -30,22 +30,41 @@ if (!$device) {
     step(true,'Created ZKTeco IN01 device and linked to DEV');
 } else {
     $fixed = false;
+    $fixNotes = [];
     if ((int)$device['department_id'] !== (int)$devId) {
         db_exec("UPDATE devices SET department_id=? WHERE id=?", [$devId, (int)$device['id']]);
-        $fixed = true;
+        $fixed = true; $fixNotes[] = 'linked to DEV department';
     }
     if ($device['status'] !== 'active') {
         db_exec("UPDATE devices SET status='active' WHERE id=?", [(int)$device['id']]);
-        $fixed = true;
+        $fixed = true; $fixNotes[] = 'set active';
     }
     // Rename from old "Engineering Entrance" → "ZKTeco IN01 – DEV"
     if ($device['name'] !== 'ZKTeco IN01 – DEV') {
         db_exec("UPDATE devices SET name='ZKTeco IN01 \xe2\x80\x93 DEV' WHERE id=?", [(int)$device['id']]);
-        $fixed = true;
+        $fixed = true; $fixNotes[] = 'renamed to "ZKTeco IN01 – DEV"';
+    }
+    // Fix wrong port — ZKTeco default is 4370, not 437
+    if ((int)$device['port'] !== 4370) {
+        db_exec("UPDATE devices SET port=4370 WHERE id=?", [(int)$device['id']]);
+        $fixed = true; $fixNotes[] = 'port corrected from '.(int)$device['port'].' → 4370';
     }
     step(true, $fixed
-        ? 'Fixed: device renamed "ZKTeco IN01 – DEV" and linked to DEV department ✓'
-        : 'ZKTeco IN01 already correctly configured ✓');
+        ? 'Fixed ZKTeco IN01: '.implode(', ', $fixNotes).' ✓'
+        : 'ZKTeco IN01 already correctly configured (port=4370) ✓');
+}
+
+/* 3a. Fix ALL devices that have wrong port (common: 437 instead of 4370) */
+$badPort = db_all("SELECT id, name, ip_address, port FROM devices WHERE port != 4370 AND port > 0");
+if ($badPort) {
+    $fixed_ports = 0;
+    foreach ($badPort as $bp) {
+        db_exec("UPDATE devices SET port=4370 WHERE id=?", [(int)$bp['id']]);
+        $fixed_ports++;
+    }
+    step(true, "Port fix: corrected $fixed_ports device(s) → all now using port 4370 ✓");
+} else {
+    step(true, "All devices already have correct port (4370) ✓");
 }
 
 /* 3. Re-push stuck pending enrollments */
