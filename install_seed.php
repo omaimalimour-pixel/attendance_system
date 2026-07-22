@@ -46,27 +46,20 @@ if (column_exists('employees', 'department')) {
     step(true, 'Migrate existing employee departments (' . count($legacy) . ' found)');
 }
 
-/* Devices — ZKTeco IN01 at 192.168.100.201 is the REAL machine (DEV dept).
-   The other 4 are seeded with placeholder IPs for when those machines are added. */
-$deviceSeed = [
-    ['DEV',   'ZKTeco IN01 – DEV dept',    '192.168.100.201', 'DEV Department'],
-    ['HR',    'ZKTeco – HR Office',         '192.168.100.202', 'HR Office'],
-    ['SALES', 'ZKTeco – Sales Floor',       '192.168.100.203', 'Sales Floor'],
-    ['OPS',   'ZKTeco – Operations',        '192.168.100.204', 'Warehouse'],
-    ['FIN',   'ZKTeco – Finance',           '192.168.100.205', 'Finance Office'],
-];
-foreach ($deviceSeed as [$code, $name, $ip, $loc]) {
-    $deptId = db_val("SELECT id FROM departments WHERE code=?", [$code]);
-    $exists = db_val("SELECT id FROM devices WHERE ip_address=?", [$ip]);
-    if (!$exists) {
-        db_exec(
-            "INSERT INTO devices (name, ip_address, port, location, department_id, status)
-             VALUES (?,?,?,?,?, 'active')",
-            [$name, $ip, 4370, $loc, $deptId]
-        );
-    }
+/* Devices — only seed the ONE real ZKTeco IN01 at 192.168.100.201 (DEV dept).
+   Additional devices should be added manually via the Devices page once
+   the real machines are on the network. Seeding fake IPs causes "Cannot connect"
+   errors on every sync and pollutes the sync history. */
+$deptId = db_val("SELECT id FROM departments WHERE code='DEV'");
+$exists = db_val("SELECT id FROM devices WHERE ip_address='192.168.100.201'");
+if (!$exists) {
+    db_exec(
+        "INSERT INTO devices (name, ip_address, port, location, department_id, status)
+         VALUES (?,?,?,?,?, 'active')",
+        ['ZKTeco IN01 – DEV', '192.168.100.201', 4370, 'DEV Department', $deptId]
+    );
 }
-step(true, 'Seed 5 clocking devices (one per department)');
+step(true, 'Seed ZKTeco IN01 device (192.168.100.201 — add other devices via Devices page)');
 
 /* Default settings */
 $settings = [
