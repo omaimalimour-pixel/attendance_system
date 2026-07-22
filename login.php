@@ -33,14 +33,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
 
         if ($user && password_verify($password, $user['password'])) {
-            // Prevent session fixation
             session_regenerate_id(true);
             $_SESSION['user_id']  = (int) $user['id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['name']     = $user['name'] ?? $user['username'];
             $_SESSION['role']     = $user['role'] ?? 'Viewer';
             login_reset($username);
-            db_exec("UPDATE admin_users SET last_login_at=NOW() WHERE id=?", [(int)$user['id']]);
+            // Safe update — only if last_login_at column exists
+            @db_exec("UPDATE admin_users SET last_login_at=NOW() WHERE id=?", [(int)$user['id']]);
             audit('auth.login', 'admin_users', (int)$user['id']);
             header("Location: dashboard/dashboard.php");
             exit;
