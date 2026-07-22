@@ -7,7 +7,7 @@ if (!function_exists('db_val')) { header('Location: install.php'); exit; }
 
 /* Departments (5) — one per clocking machine, as in a real company */
 $departments = [
-    ['Engineering', 'ENG', 'Product & software engineering'],
+    ['DEV',            'DEV',   'Development department — ZKTeco IN01 installed'],
     ['Human Resources', 'HR', 'People operations & recruiting'],
     ['Sales', 'SALES', 'Revenue & account management'],
     ['Operations', 'OPS', 'Logistics & facilities'],
@@ -46,10 +46,10 @@ if (column_exists('employees', 'department')) {
     step(true, 'Migrate existing employee departments (' . count($legacy) . ' found)');
 }
 
-/* Devices — ZKTeco IN01 at 192.168.100.201 is the REAL machine (Engineering dept).
+/* Devices — ZKTeco IN01 at 192.168.100.201 is the REAL machine (DEV dept).
    The other 4 are seeded with placeholder IPs for when those machines are added. */
 $deviceSeed = [
-    ['ENG',   'ZKTeco IN01 – Engineering', '192.168.100.201', 'Engineering Floor'],
+    ['DEV',   'ZKTeco IN01 – DEV dept',    '192.168.100.201', 'DEV Department'],
     ['HR',    'ZKTeco – HR Office',         '192.168.100.202', 'HR Office'],
     ['SALES', 'ZKTeco – Sales Floor',       '192.168.100.203', 'Sales Floor'],
     ['OPS',   'ZKTeco – Operations',        '192.168.100.204', 'Warehouse'],
