@@ -417,3 +417,7 @@ table.dt tbody td,table.data tbody td,table.att tbody td{font-size:14.5px!import
 .legend span,.legend-item{font-size:13.5px!important;color:var(--muted)!important}
 .empty h4,.empty-state h4{font-size:16px!important;color:var(--text)!important}
 .empty p,.empty-state p{font-size:14.5px!important;color:var(--muted)!important}
+
+
+/* Warning alert */
+.alert-warning{background:rgba(251,191,36,.1);color:var(--amber);border:1px solid rgba(251,191,36,.2)}

@@ -83,6 +83,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $results[] = ['device' => $dev, 'imported' => $imp, 'skipped' => $skp, 'status' => $st, 'message' => $msg];
     }
     audit('devices.sync', 'devices', $scope === 'one' ? (int) inp($_POST, 'device_id') : 'all');
+
+    // If sync was triggered from the attendance page, redirect back there
+    $referer = $_SERVER['HTTP_REFERER'] ?? '';
+    if (strpos($referer, 'attendance.php') !== false) {
+        $total = array_sum(array_column($results, 'imported'));
+        header("Location: attendance.php?synced=1&imported=$total");
+        exit;
+    }
 }
 
 /* Preselect a device if arriving from devices.php (?device=ID) */
