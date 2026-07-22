@@ -1,66 +1,151 @@
 <?php
 /**
- * ChronoX — Device integration (ZKTeco fingerprint terminals).
+ * ChronoX — ZKTeco device layer
  *
- * Fingerprint enrolment flow:
- *   1. An employee is added and assigned to a department.
- *   2. Each department has one (or more) biometric device(s).
- *   3. We push the employee's user record to that department's device(s) so the
- *      terminal recognises the user_id — the employee can then walk up to that
- *      machine and register their fingerprint.
- *   4. We track the request in `enrollment_requests` (pending → sent → enrolled).
- *
- * Every device call is wrapped so an offline terminal never breaks the app.
+ * Wraps the rats/zkteco library for:
+ *   - Connection testing
+ *   - Listing users on the device
+ *   - Pushing a new user (so they can enrol their fingerprint at the terminal)
+ *   - Reading attendance punches
+ *   - Full fingerprint-enrolment request lifecycle
  */
-
 require_once __DIR__ . '/db.php';
 
-/** True when the ZKTeco PHP library is installed (composer). */
+/* ─── Library availability ─────────────────────────────────────── */
+
 function device_lib_available(): bool
 {
-    return is_file(__DIR__ . '/../vendor/autoload.php')
-        && (class_exists('\Rats\Zkteco\Lib\ZKTeco') || _device_try_autoload());
+    static $ok = null;
+    if ($ok !== null) return $ok;
+    if (!is_file(__DIR__ . '/../vendor/autoload.php')) return $ok = false;
+    require_once __DIR__ . '/../vendor/autoload.php';
+    return $ok = class_exists('\Rats\Zkteco\Lib\ZKTeco');
 }
 
-function _device_try_autoload(): bool
+function _zk(string $ip, int $port = 4370): \Rats\Zkteco\Lib\ZKTeco
 {
     require_once __DIR__ . '/../vendor/autoload.php';
-    return class_exists('\Rats\Zkteco\Lib\ZKTeco');
+    return new \Rats\Zkteco\Lib\ZKTeco($ip, $port);
+}
+
+/* ─── Connection helpers ────────────────────────────────────────── */
+
+/**
+ * Test connectivity to a device.
+ * Returns ['ok'=>bool, 'message'=>string, 'time'=>string|null]
+ */
+function device_test_connection(array $device): array
+{
+    if (!device_lib_available()) {
+        return ['ok' => false, 'message' => 'ZKTeco library not installed — run: composer install',
+                'time' => null, 'users' => 0];
+    }
+    try {
+        $zk = _zk($device['ip_address'], (int)$device['port']);
+        if (!$zk->connect()) {
+            return ['ok' => false, 'message' => "Cannot connect to {$device['ip_address']}:{$device['port']}. Check the device is online and on the same network.",
+                    'time' => null, 'users' => 0];
+        }
+        $t = $zk->getTime();
+        $users = $zk->getUser();
+        $zk->disconnect();
+        return [
+            'ok'      => true,
+            'message' => "Connected successfully to {$device['name']}.",
+            'time'    => $t ?: null,
+            'users'   => is_array($users) ? count($users) : 0,
+        ];
+    } catch (\Throwable $e) {
+        return ['ok' => false, 'message' => 'Error: ' . $e->getMessage(), 'time' => null, 'users' => 0];
+    }
 }
 
 /**
- * Push an employee onto a single device so they can enrol a fingerprint.
- * Returns [bool ok, string message].
+ * Get all users currently registered on a device.
+ * Returns array of ['uid', 'userid', 'name', 'role'] or empty array.
+ */
+function device_get_users(array $device): array
+{
+    if (!device_lib_available()) return [];
+    try {
+        $zk   = _zk($device['ip_address'], (int)$device['port']);
+        if (!$zk->connect()) return [];
+        $list = $zk->getUser();
+        $zk->disconnect();
+        return is_array($list) ? $list : [];
+    } catch (\Throwable $e) {
+        return [];
+    }
+}
+
+/* ─── Push user to device (enables fingerprint enrolment) ────────── */
+
+/**
+ * Push ONE employee to ONE device so they can register their fingerprint.
+ *
+ * The ZKTeco IN01 flow:
+ *   1. App calls setUser() → device knows the user ID & name.
+ *   2. Employee walks to the terminal and places finger → device stores the template.
+ *   3. From that point on, every punch is recognised and sent back on sync.
+ *
+ * Returns [bool $ok, string $message]
  */
 function device_push_user(array $device, array $employee): array
 {
     if (!device_lib_available()) {
-        return [false, 'ZKTeco library not installed (run composer install on the server).'];
+        return [false, 'ZKTeco library not installed. Run: cd ' . dirname(__DIR__) . ' && composer install'];
     }
     try {
-        $zk = new \Rats\Zkteco\Lib\ZKTeco($device['ip_address'], (int) $device['port']);
+        $zk = _zk($device['ip_address'], (int)$device['port']);
         if (!$zk->connect()) {
-            return [false, "Device offline at {$device['ip_address']}:{$device['port']}"];
+            return [false, "Device offline at {$device['ip_address']}:{$device['port']} — request saved as pending."];
         }
-        $zk->disableDevice();
 
-        $uid  = (int) $employee['user_id'];             // internal index
+        $uid  = (int)$employee['user_id'];   // numeric UID (max 65535)
         $name = trim(($employee['first_name'] ?? '') . ' ' . ($employee['last_name'] ?? ''));
-        // setUser(uid, userid, name, password, role, cardno)
-        $zk->setUser($uid, (string) $employee['user_id'], $name !== '' ? $name : ('User ' . $uid), '', 0, 0);
+        if ($name === '') $name = 'User ' . $uid;
+        if (strlen($name) > 24) $name = substr($name, 0, 24); // device limit
 
+        $zk->disableDevice();
+        $ok = $zk->setUser($uid, (string)$uid, $name, '', 0, 0);
         $zk->enableDevice();
         $zk->disconnect();
-        return [true, "User pushed to {$device['name']} — employee can now enrol their fingerprint on that machine."];
-    } catch (\Throwable $ex) {
-        return [false, 'Device error: ' . $ex->getMessage()];
+
+        if ($ok === false) {
+            return [false, "setUser() returned false for UID {$uid} on {$device['name']}."];
+        }
+
+        return [true, "User '{$name}' (UID {$uid}) pushed to {$device['name']} ({$device['ip_address']}). Employee can now scan their finger on that machine."];
+    } catch (\Throwable $e) {
+        return [false, 'Device exception: ' . $e->getMessage()];
     }
 }
 
 /**
- * Create fingerprint-enrolment request(s) for an employee, targeting every
- * active device in their department, and attempt to push them immediately.
- * Falls back to a "pending" request when the device is unreachable.
+ * Remove a user from a device (e.g. when an employee is deleted).
+ */
+function device_remove_user(array $device, int $uid): array
+{
+    if (!device_lib_available()) return [false, 'Library not installed.'];
+    try {
+        $zk = _zk($device['ip_address'], (int)$device['port']);
+        if (!$zk->connect()) return [false, 'Device offline.'];
+        $zk->disableDevice();
+        $zk->deleteUser($uid);
+        $zk->enableDevice();
+        $zk->disconnect();
+        return [true, "User {$uid} removed from {$device['name']}."];
+    } catch (\Throwable $e) {
+        return [false, $e->getMessage()];
+    }
+}
+
+/* ─── Enrolment request lifecycle ──────────────────────────────── */
+
+/**
+ * Create enrolment requests for an employee, targeting every active device
+ * in their department, and attempt to push immediately.
+ * Falls back to 'pending' when the device is unreachable.
  */
 function enrollment_request_create(array $employee, ?string $by = null): array
 {
@@ -68,65 +153,86 @@ function enrollment_request_create(array $employee, ?string $by = null): array
     $deptId  = $employee['department_id'] ?? null;
 
     $devices = $deptId
-        ? db_all("SELECT * FROM devices WHERE department_id=? AND status='active'", [(int) $deptId])
+        ? db_all("SELECT * FROM devices WHERE department_id=? AND status='active'", [(int)$deptId])
         : [];
 
-    // No department device? Still record a pending request (unassigned).
     if (!$devices) {
+        $msg = $deptId
+            ? 'No active device assigned to this department yet — go to Devices and assign one.'
+            : 'Employee has no department — assign a department and retry.';
         db_exec(
-            "INSERT INTO enrollment_requests (employee_id, user_id, device_id, department_id, status, message, requested_by, updated_at)
-             VALUES (?,?,?,?, 'pending', ?, ?, NOW())",
-            [
-                (int) $employee['id'], (int) $employee['user_id'], null, $deptId ? (int) $deptId : null,
-                $deptId ? 'No active device in this department yet.' : 'Employee has no department assigned.',
-                $by,
-            ]
+            "INSERT INTO enrollment_requests
+               (employee_id, user_id, device_id, department_id, status, message, requested_by, updated_at)
+             VALUES (?,?,NULL,?,'pending',?,?,NOW())",
+            [(int)$employee['id'], (int)$employee['user_id'], $deptId ? (int)$deptId : null, $msg, $by]
         );
-        $results[] = ['device' => null, 'ok' => false, 'message' => 'No active device — request left pending.'];
+        $results[] = ['device' => null, 'ok' => false, 'message' => $msg];
         return $results;
     }
 
     foreach ($devices as $device) {
         [$ok, $msg] = device_push_user($device, $employee);
         $status = $ok ? 'sent' : 'pending';
-        db_exec(
-            "INSERT INTO enrollment_requests (employee_id, user_id, device_id, department_id, status, message, requested_by, updated_at)
-             VALUES (?,?,?,?,?,?,?, NOW())",
-            [(int) $employee['id'], (int) $employee['user_id'], (int) $device['id'], $device['department_id'], $status, $msg, $by]
+        // Avoid duplicate requests
+        $exists = db_val(
+            "SELECT id FROM enrollment_requests WHERE employee_id=? AND device_id=? AND status NOT IN ('enrolled','failed')",
+            [(int)$employee['id'], (int)$device['id']]
         );
+        if ($exists) {
+            // Update existing
+            db_exec("UPDATE enrollment_requests SET status=?, message=?, updated_at=NOW() WHERE id=?",
+                [$status, $msg, (int)$exists]);
+        } else {
+            db_exec(
+                "INSERT INTO enrollment_requests
+                   (employee_id, user_id, device_id, department_id, status, message, requested_by, updated_at)
+                 VALUES (?,?,?,?,?,?,?,NOW())",
+                [(int)$employee['id'], (int)$employee['user_id'],
+                 (int)$device['id'], $device['department_id'], $status, $msg, $by]
+            );
+        }
         $results[] = ['device' => $device, 'ok' => $ok, 'message' => $msg];
     }
     return $results;
 }
 
-/** Retry a single enrolment request (re-push to its device). */
+/** Retry a pending/failed enrolment request. */
 function enrollment_retry(int $requestId, ?string $by = null): array
 {
     $req = db_one("SELECT * FROM enrollment_requests WHERE id=?", [$requestId]);
     if (!$req) return [false, 'Request not found.'];
 
-    $employee = db_one("SELECT * FROM employees WHERE id=?", [(int) $req['employee_id']]);
+    $employee = db_one("SELECT * FROM employees WHERE id=?", [(int)$req['employee_id']]);
     if (!$employee) return [false, 'Employee no longer exists.'];
 
-    // Resolve a device: the stored one, else an active device in the department.
-    $device = $req['device_id'] ? db_one("SELECT * FROM devices WHERE id=?", [(int) $req['device_id']]) : null;
+    $device = $req['device_id']
+        ? db_one("SELECT * FROM devices WHERE id=?", [(int)$req['device_id']])
+        : null;
     if (!$device && !empty($employee['department_id'])) {
-        $device = db_one("SELECT * FROM devices WHERE department_id=? AND status='active' LIMIT 1", [(int) $employee['department_id']]);
+        $device = db_one(
+            "SELECT * FROM devices WHERE department_id=? AND status='active' LIMIT 1",
+            [(int)$employee['department_id']]
+        );
     }
     if (!$device) {
         db_exec("UPDATE enrollment_requests SET status='pending', message=?, updated_at=NOW() WHERE id=?",
-            ['No active device available for this department.', $requestId]);
+            ['No active device available — assign a device to this department first.', $requestId]);
         return [false, 'No active device available.'];
     }
 
     [$ok, $msg] = device_push_user($device, $employee);
-    db_exec("UPDATE enrollment_requests SET device_id=?, status=?, message=?, updated_at=NOW() WHERE id=?",
-        [(int) $device['id'], $ok ? 'sent' : 'failed', $msg, $requestId]);
+    db_exec(
+        "UPDATE enrollment_requests SET device_id=?, status=?, message=?, requested_by=?, updated_at=NOW() WHERE id=?",
+        [(int)$device['id'], $ok ? 'sent' : 'failed', $msg, $by, $requestId]
+    );
     return [$ok, $msg];
 }
 
-/** Mark a request as completed (fingerprint successfully registered). */
+/** Mark a request as completed (fingerprint confirmed on device). */
 function enrollment_mark_enrolled(int $requestId): void
 {
-    db_exec("UPDATE enrollment_requests SET status='enrolled', enrolled_at=NOW(), updated_at=NOW() WHERE id=?", [$requestId]);
+    db_exec(
+        "UPDATE enrollment_requests SET status='enrolled', enrolled_at=NOW(), updated_at=NOW() WHERE id=?",
+        [$requestId]
+    );
 }

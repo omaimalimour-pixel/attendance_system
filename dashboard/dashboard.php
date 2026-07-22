@@ -52,6 +52,12 @@ function spark($seed){$h='';for($i=0;$i<12;$i++){$v=30+(($seed*($i+3))%70);$h.='
     <div class="kpi-lbl">Total Punches</div><div class="kpi-val" style="color:var(--amber)"><?=$totalPunches?></div>
     <div class="spark"><?php for($i=0;$i<12;$i++){$v=35+(($i*9)%60);echo '<i style="height:'.$v.'%;background:linear-gradient(180deg,#D98A0B,rgba(217,138,11,.2))"></i>';}?></div>
   </div>
+  <a href="enrollment.php" class="kpi" style="text-decoration:none">
+    <div class="kpi-top"><div class="kpi-ic vi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 11c0 3.5-2 6-2 6M7 8a5 5 0 0 1 10 0v2M5 12a7 7 0 0 1 .5-2.6M12 8v5a8 8 0 0 0 2 5M9 20a12 12 0 0 1-1.5-6"/></svg></div><span class="kpi-tag <?=$pendingEnrollments>0?'dn':'nt' ?>"><?=$pendingEnrollments>0?$pendingEnrollments.' pending':'All clear'?></span></div>
+    <div class="kpi-lbl">Fingerprint Enrolment</div>
+    <div class="kpi-val" style="color:<?=$pendingEnrollments>0?'var(--rose)':'var(--green)'?>"><?=$pendingEnrollments?></div>
+    <div class="kpi-sub"><?=$pendingEnrollments>0?'Tap to resolve':'All employees enrolled'?></div>
+  </a>
 </div>
 
 <!-- CHARTS -->
