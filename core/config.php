@@ -21,7 +21,7 @@ $defaults = [
     'timezone'   => getenv('CHRONOX_TZ') ?: 'Africa/Casablanca',
 
     // Security
-    'session_name'      => 'chronox_sid',
+    'session_name'      => 'chronox',
     'session_idle_secs' => 60 * 60,   // auto-logout after 1h idle
     'login_max_attempts'=> 5,          // lockout threshold
     'login_lockout_secs'=> 15 * 60,    // 15 min lockout window
