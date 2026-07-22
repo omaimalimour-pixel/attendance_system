@@ -182,37 +182,49 @@ include "includes/header.php";
         <p style="font-size:14.5px;color:var(--muted);text-align:center;margin-bottom:18px">Select a finger, then click <strong style="color:var(--text)">Register on Device</strong>.</p>
         <div id="selLabel" style="text-align:center;font-size:16px;font-weight:750;color:#818CF8;min-height:24px;margin-bottom:18px"></div>
         <div style="display:flex;justify-content:center;gap:40px;flex-wrap:wrap">
-            <!-- RIGHT HAND -->
-            <div style="text-align:center">
-                <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:10px">Right Hand</div>
-                <svg viewBox="0 0 200 260" width="160" height="208" style="overflow:visible">
-                    <ellipse cx="100" cy="188" rx="68" ry="56" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.10)" stroke-width="1.5"/>
-                    <g class="fp" data-fi="0" onclick="pick(0)" style="cursor:pointer"><ellipse cx="34" cy="115" rx="17" ry="44" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.10)" stroke-width="1.5" class="fe"/><text x="34" y="119" text-anchor="middle" font-size="15" fill="rgba(255,255,255,.5)" font-family="Inter" class="ft">0</text></g>
-                    <g class="fp" data-fi="1" onclick="pick(1)" style="cursor:pointer"><ellipse cx="64" cy="92" rx="18" ry="54" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.10)" stroke-width="1.5" class="fe"/><text x="64" y="96" text-anchor="middle" font-size="15" fill="rgba(255,255,255,.5)" font-family="Inter" class="ft">1</text></g>
-                    <g class="fp" data-fi="2" onclick="pick(2)" style="cursor:pointer"><ellipse cx="97" cy="79" rx="18" ry="60" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.10)" stroke-width="1.5" class="fe"/><text x="97" y="83" text-anchor="middle" font-size="15" fill="rgba(255,255,255,.5)" font-family="Inter" class="ft">2</text></g>
-                    <g class="fp" data-fi="3" onclick="pick(3)" style="cursor:pointer"><ellipse cx="130" cy="90" rx="18" ry="54" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.10)" stroke-width="1.5" class="fe"/><text x="130" y="94" text-anchor="middle" font-size="15" fill="rgba(255,255,255,.5)" font-family="Inter" class="ft">3</text></g>
-                    <g class="fp" data-fi="4" onclick="pick(4)" style="cursor:pointer"><ellipse cx="167" cy="158" rx="22" ry="42" transform="rotate(-35 167 158)" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.10)" stroke-width="1.5" class="fe"/><text x="167" y="161" text-anchor="middle" font-size="15" fill="rgba(255,255,255,.5)" font-family="Inter" class="ft">4</text></g>
-                </svg>
-            </div>
-            <!-- LEFT HAND -->
+            <!-- LEFT HAND — user's left hand appears on the LEFT side of screen -->
             <div style="text-align:center">
                 <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:10px">Left Hand</div>
                 <svg viewBox="0 0 200 260" width="160" height="208" style="overflow:visible">
                     <ellipse cx="100" cy="188" rx="68" ry="56" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.10)" stroke-width="1.5"/>
-                    <g class="fp" data-fi="5" onclick="pick(5)" style="cursor:pointer"><ellipse cx="33" cy="158" rx="22" ry="42" transform="rotate(35 33 158)" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.10)" stroke-width="1.5" class="fe"/><text x="33" y="161" text-anchor="middle" font-size="15" fill="rgba(255,255,255,.5)" font-family="Inter" class="ft">5</text></g>
-                    <g class="fp" data-fi="6" onclick="pick(6)" style="cursor:pointer"><ellipse cx="70" cy="90" rx="18" ry="54" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.10)" stroke-width="1.5" class="fe"/><text x="70" y="94" text-anchor="middle" font-size="15" fill="rgba(255,255,255,.5)" font-family="Inter" class="ft">6</text></g>
+                    <!-- Left Thumb(5): inner side = right of SVG -->
+                    <g class="fp" data-fi="5" onclick="pick(5)" style="cursor:pointer"><ellipse cx="167" cy="158" rx="22" ry="42" transform="rotate(-35 167 158)" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.10)" stroke-width="1.5" class="fe"/><text x="167" y="161" text-anchor="middle" font-size="15" fill="rgba(255,255,255,.5)" font-family="Inter" class="ft">5</text></g>
+                    <!-- Left Index(6) -->
+                    <g class="fp" data-fi="6" onclick="pick(6)" style="cursor:pointer"><ellipse cx="130" cy="90" rx="18" ry="54" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.10)" stroke-width="1.5" class="fe"/><text x="130" y="94" text-anchor="middle" font-size="15" fill="rgba(255,255,255,.5)" font-family="Inter" class="ft">6</text></g>
+                    <!-- Left Middle(7) -->
                     <g class="fp" data-fi="7" onclick="pick(7)" style="cursor:pointer"><ellipse cx="103" cy="79" rx="18" ry="60" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.10)" stroke-width="1.5" class="fe"/><text x="103" y="83" text-anchor="middle" font-size="15" fill="rgba(255,255,255,.5)" font-family="Inter" class="ft">7</text></g>
-                    <g class="fp" data-fi="8" onclick="pick(8)" style="cursor:pointer"><ellipse cx="136" cy="92" rx="18" ry="54" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.10)" stroke-width="1.5" class="fe"/><text x="136" y="96" text-anchor="middle" font-size="15" fill="rgba(255,255,255,.5)" font-family="Inter" class="ft">8</text></g>
-                    <g class="fp" data-fi="9" onclick="pick(9)" style="cursor:pointer"><ellipse cx="166" cy="115" rx="17" ry="44" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.10)" stroke-width="1.5" class="fe"/><text x="166" y="119" text-anchor="middle" font-size="15" fill="rgba(255,255,255,.5)" font-family="Inter" class="ft">9</text></g>
+                    <!-- Left Ring(8) -->
+                    <g class="fp" data-fi="8" onclick="pick(8)" style="cursor:pointer"><ellipse cx="70" cy="90" rx="18" ry="54" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.10)" stroke-width="1.5" class="fe"/><text x="70" y="94" text-anchor="middle" font-size="15" fill="rgba(255,255,255,.5)" font-family="Inter" class="ft">8</text></g>
+                    <!-- Left Pinky(9): outer side = left of SVG -->
+                    <g class="fp" data-fi="9" onclick="pick(9)" style="cursor:pointer"><ellipse cx="34" cy="115" rx="17" ry="44" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.10)" stroke-width="1.5" class="fe"/><text x="34" y="119" text-anchor="middle" font-size="15" fill="rgba(255,255,255,.5)" font-family="Inter" class="ft">9</text></g>
+                </svg>
+            </div>
+            <!-- RIGHT HAND — user's right hand appears on the RIGHT side of screen -->
+            <div style="text-align:center">
+                <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:10px">Right Hand</div>
+                <svg viewBox="0 0 200 260" width="160" height="208" style="overflow:visible">
+                    <ellipse cx="100" cy="188" rx="68" ry="56" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.10)" stroke-width="1.5"/>
+                    <!-- Right Thumb(4): inner side = left of SVG -->
+                    <g class="fp" data-fi="4" onclick="pick(4)" style="cursor:pointer"><ellipse cx="33" cy="158" rx="22" ry="42" transform="rotate(35 33 158)" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.10)" stroke-width="1.5" class="fe"/><text x="33" y="161" text-anchor="middle" font-size="15" fill="rgba(255,255,255,.5)" font-family="Inter" class="ft">4</text></g>
+                    <!-- Right Index(3) -->
+                    <g class="fp" data-fi="3" onclick="pick(3)" style="cursor:pointer"><ellipse cx="64" cy="90" rx="18" ry="54" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.10)" stroke-width="1.5" class="fe"/><text x="64" y="94" text-anchor="middle" font-size="15" fill="rgba(255,255,255,.5)" font-family="Inter" class="ft">3</text></g>
+                    <!-- Right Middle(2) -->
+                    <g class="fp" data-fi="2" onclick="pick(2)" style="cursor:pointer"><ellipse cx="97" cy="79" rx="18" ry="60" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.10)" stroke-width="1.5" class="fe"/><text x="97" y="83" text-anchor="middle" font-size="15" fill="rgba(255,255,255,.5)" font-family="Inter" class="ft">2</text></g>
+                    <!-- Right Ring(1) -->
+                    <g class="fp" data-fi="1" onclick="pick(1)" style="cursor:pointer"><ellipse cx="130" cy="90" rx="18" ry="54" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.10)" stroke-width="1.5" class="fe"/><text x="130" y="94" text-anchor="middle" font-size="15" fill="rgba(255,255,255,.5)" font-family="Inter" class="ft">1</text></g>
+                    <!-- Right Pinky(0): outer side = right of SVG -->
+                    <g class="fp" data-fi="0" onclick="pick(0)" style="cursor:pointer"><ellipse cx="166" cy="115" rx="17" ry="44" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.10)" stroke-width="1.5" class="fe"/><text x="166" y="119" text-anchor="middle" font-size="15" fill="rgba(255,255,255,.5)" font-family="Inter" class="ft">0</text></g>
                 </svg>
             </div>
         </div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px">
-            <?php foreach ($FN as $fi=>$fn): ?>
-            <button type="button" class="fq" data-fi="<?=$fi?>" onclick="pick(<?=$fi?>)"
-                style="padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:13.5px;cursor:pointer;transition:.12s;font-family:inherit">
-                <span style="font-weight:750;color:var(--accent);margin-right:4px"><?=$fi?></span><?=$fn?>
-            </button>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px;align-items:center">
+            <span style="font-size:12px;color:var(--muted-2);font-weight:600">Left:</span>
+            <?php foreach ([9=>'L.Pinky',8=>'L.Ring',7=>'L.Middle',6=>'L.Index',5=>'L.Thumb'] as $fi=>$fn): ?>
+            <button type="button" class="fq" data-fi="<?=$fi?>" onclick="pick(<?=$fi?>)" style="padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:13px;cursor:pointer;transition:.12s;font-family:inherit"><span style="font-weight:750;color:var(--accent);margin-right:3px"><?=$fi?></span><?=$fn?></button>
+            <?php endforeach; ?>
+            <span style="font-size:12px;color:var(--muted-2);font-weight:600;margin-left:8px">Right:</span>
+            <?php foreach ([4=>'R.Thumb',3=>'R.Index',2=>'R.Middle',1=>'R.Ring',0=>'R.Pinky'] as $fi=>$fn): ?>
+            <button type="button" class="fq" data-fi="<?=$fi?>" onclick="pick(<?=$fi?>)" style="padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:13px;cursor:pointer;transition:.12s;font-family:inherit"><span style="font-weight:750;color:var(--accent);margin-right:3px"><?=$fi?></span><?=$fn?></button>
             <?php endforeach; ?>
         </div>
     </div>
@@ -220,7 +232,7 @@ include "includes/header.php";
         <?=csrf_field()?>
         <input type="hidden" name="action" value="enroll">
         <input type="hidden" name="employee_id" value="<?=(int)$preEmpId?>">
-        <input type="hidden" name="finger" id="fi" value="3">
+        <input type="hidden" name="finger" id="fi" value="">
         <input type="hidden" name="device_id" id="di" value="<?=$preDevId?>">
     </form>
     <div class="form-actions">
@@ -254,12 +266,14 @@ function pick(i){
     document.querySelectorAll('.fq').forEach(b=>{const a=parseInt(b.dataset.fi)===i;b.style.background=a?'rgba(129,140,248,.16)':'var(--surface)';b.style.borderColor=a?'#818CF8':'var(--border)';b.style.color=a?'#818CF8':'var(--muted)';});
 }
 function send(){
+    const fi=document.getElementById('fi').value;
+    if(fi===''){alert('Please select a finger first.');return;}
     document.getElementById('di').value=document.getElementById('devSel')?.value||'';
     document.getElementById('bt').textContent='Registering…';
     document.getElementById('enrollBtn').disabled=true;
     document.getElementById('ef').submit();
 }
 document.getElementById('devSel')?.addEventListener('change',e=>document.getElementById('di').value=e.target.value);
-pick(3);
+// No finger auto-selected — user must click one
 </script>
 <?php include "includes/footer.php"; ?>
