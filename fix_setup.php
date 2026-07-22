@@ -67,7 +67,27 @@ if ($badPort) {
     step(true, "All devices already have correct port (4370) ✓");
 }
 
-/* 3. Re-push stuck pending enrollments */
+/* 3. Remove fake/placeholder devices (IPs that don't exist on the real network).
+      Only the ZKTeco IN01 at 192.168.100.201 is real. The other 4 were seeded
+      as demo data and cause "Cannot connect" errors on every sync. */
+$fakeIPs = ['192.168.100.202','192.168.100.203','192.168.100.204','192.168.100.205'];
+$deleted = 0;
+foreach ($fakeIPs as $ip) {
+    $fake = db_one("SELECT id,name FROM devices WHERE ip_address=?", [$ip]);
+    if ($fake) {
+        // Remove their error logs so sync history is clean
+        db_exec("DELETE FROM sync_logs WHERE device_id=?", [(int)$fake['id']]);
+        db_exec("DELETE FROM devices WHERE id=?", [(int)$fake['id']]);
+        $deleted++;
+    }
+}
+if ($deleted > 0) {
+    step(true, "Removed $deleted placeholder device(s) — only ZKTeco IN01 remains ✓");
+} else {
+    step(true, 'No fake devices found — already clean ✓');
+}
+
+/* 4. Re-push stuck pending enrollments */
 require_once __DIR__ . '/core/device.php';
 $stuck = db_all(
     "SELECT r.*,e.first_name,e.last_name,e.user_id AS emp_uid
@@ -92,7 +112,7 @@ if ($stuck && $machine) {
     step(false,'Device not reachable — start the machine then re-run this page');
 }
 
-/* 4. enrollment_requests table guard */
+/* 5. enrollment_requests table guard */
 if (!db_table_exists('enrollment_requests')) {
     db_exec("CREATE TABLE enrollment_requests (
         id INT AUTO_INCREMENT PRIMARY KEY,
