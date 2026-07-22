@@ -42,7 +42,7 @@ $loggedIn = isset($_SESSION['user_id']);
         <div class="nav-cta">
             <?php if ($loggedIn): ?>
                 <a href="dashboard/dashboard.php" class="btn btn-ghost">Dashboard</a>
-                <a href="logout.php" class="btn btn-primary"><span>Logout</span></a>
+                <a href="login.php" class="btn btn-primary"><span>Sign In</span></a>
             <?php else: ?>
                 <a href="login.php" class="btn btn-ghost">Sign in</a>
                 <a href="login.php" class="btn btn-primary"><span>Get Started</span></a>

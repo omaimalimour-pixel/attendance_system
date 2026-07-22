@@ -57,6 +57,9 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .cnt{padding:24px 28px 40px;position:relative;z-index:1;max-width:1600px}
 .bk{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(2px);z-index:1040}
 .bk.show{display:block}
+/* Desktop sidebar collapse */
+.sidebar.sb-collapsed{width:0;padding:0;border-right:none;overflow:hidden}
+.main.sb-expanded{margin-left:0!important}
 @media(max-width:991px){
   .sidebar{transform:translateX(-100%)}
   .sidebar.mobile-open{transform:translateX(0);box-shadow:0 8px 30px rgba(0,0,0,.7)}
