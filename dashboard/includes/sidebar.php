@@ -17,6 +17,7 @@
 <div class="nav-label">Devices</div>
 <?php if ($isAdmin): ?>
 <a href="devices.php" class="side-link <?=$currentPage=='devices'?'active':''?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="12" cy="12" r="3"/></svg><span>Clocking Machines</span></a>
+<a href="device_users.php" class="side-link <?=$currentPage=='device_users'?'active':''?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Device Users</span></a>
 <?php endif; ?>
 <a href="sync_attendance.php" class="side-link <?=$currentPage=='sync'?'active':''?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg><span>Sync Devices</span></a>
 <?php if ($isAdmin): ?>
