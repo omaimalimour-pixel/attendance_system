@@ -4,7 +4,7 @@
  * Creates the full normalized schema (idempotent) and seeds starter data.
  * Safe to re-run: uses IF NOT EXISTS and presence checks.
  */
-require_once __DIR__ . '/core/db.php';
+require_once __DIR__ . '/core/security.php'; // pulls in db.php and defines e() used by install_view.php
 
 $steps = [];
 function step($ok, $label, $err = '') { global $steps; $steps[] = [$ok, $label, $err]; }
@@ -137,6 +137,26 @@ run_ddl("CREATE TABLE IF NOT EXISTS settings (
     `key` VARCHAR(80) PRIMARY KEY,
     `value` TEXT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", "Create settings");
+
+/* ---------------- enrollment_requests (fingerprint enrolment) ----------------
+   When an employee is added, we create a request that pushes them to their
+   department's device so they can register their fingerprint on that machine. */
+run_ddl("CREATE TABLE IF NOT EXISTS enrollment_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    employee_id INT NOT NULL,
+    user_id INT NOT NULL,
+    device_id INT NULL,
+    department_id INT NULL,
+    status ENUM('pending','sent','enrolled','failed') NOT NULL DEFAULT 'pending',
+    message VARCHAR(255) NULL,
+    requested_by VARCHAR(100) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL,
+    enrolled_at DATETIME NULL,
+    INDEX idx_enr_emp (employee_id),
+    INDEX idx_enr_device (device_id),
+    INDEX idx_enr_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", "Create enrollment_requests");
 
 require __DIR__ . '/install_seed.php';
 require __DIR__ . '/install_view.php';
