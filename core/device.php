@@ -157,9 +157,15 @@ function enrollment_request_create(array $employee, ?string $by = null): array
         : [];
 
     if (!$devices) {
+        // FALLBACK: if no device is linked to this specific department,
+        // use any active device in the database (e.g. ZKTeco IN01 at 192.168.100.201)
+        $devices = db_all("SELECT * FROM devices WHERE status='active' ORDER BY id ASC LIMIT 1");
+    }
+
+    if (!$devices) {
         $msg = $deptId
-            ? 'No active device assigned to this department yet — go to Devices and assign one.'
-            : 'Employee has no department — assign a department and retry.';
+            ? 'No active device found. Open Devices page, add your ZKTeco IN01 (192.168.100.201) and assign it to this department.'
+            : 'Employee has no department. Assign a department and retry.';
         db_exec(
             "INSERT INTO enrollment_requests
                (employee_id, user_id, device_id, department_id, status, message, requested_by, updated_at)
