@@ -12,10 +12,10 @@
     --surface-2: rgba(255,255,255,.07);
     --border: rgba(255,255,255,.09);
     --border-2: rgba(255,255,255,.16);
-    --text:   #EDF0FA;
-    --text-2: #C8CCDB;
-    --muted:  #9AA2C0;
-    --muted-2:#626A8A;
+    --text:   #F0F2FA;
+    --text-2: #D6DAF0;
+    --muted:  #B8BEDA;
+    --muted-2:#9AA2C0;
     --indigo: #6366F1;
     --violet: #8B5CF6;
     --cyan:   #22D3EE;
@@ -375,3 +375,45 @@ table.dt tbody tr:last-child td,table.data tbody tr:last-child td{border-bottom:
 .greet h2{font-family:var(--font-heading);font-size:18px;font-weight:800;letter-spacing:-.02em}.greet p{font-size:12.5px;color:var(--muted-2);margin-top:2px}
 @media(max-width:991px){.sidebar{transform:translateX(-100%)}.sidebar.mobile-open{transform:translateX(0);box-shadow:0 8px 30px rgba(0,0,0,.6)}.main{margin-left:0!important}.hdr-search{display:none}.col-8,.col-4,.col-lg-8,.col-lg-4,.col-6{flex:0 0 100%;max-width:100%}.cnt{padding:16px 14px}}
 @media(max-width:575px){.kpi-grid{grid-template-columns:1fr 1fr}.sbar,.search-bar{flex-direction:column}.fg,.form-grid{grid-template-columns:1fr}}
+
+
+
+/* ═══════════════════════════════════════
+   READABILITY OVERRIDES — bigger, brighter
+   ═══════════════════════════════════════ */
+body{font-size:15.5px!important;line-height:1.65!important}
+.nav-label{font-size:12px!important;color:var(--muted-2)!important}
+.brand-sub{font-size:13px!important;color:var(--muted)!important}
+.side-link{font-size:14.5px!important;color:#C8CDE0!important}
+.side-link svg{opacity:.75!important}
+.user-name{font-size:14px!important;color:#E0E4F5!important}
+.user-role{font-size:12.5px!important;color:var(--muted)!important}
+.hdr-info h1{font-size:18px!important}
+.hdr-info p{font-size:13px!important;color:var(--muted)!important}
+.hdr-search input{font-size:14px!important}
+.greet h2{font-size:20px!important}
+.greet p{font-size:14.5px!important;color:var(--muted)!important}
+.kpi-lbl,.kpi-label{font-size:14.5px!important;color:var(--muted)!important}
+.kpi-val,.kpi-value{font-size:32px!important}
+.kpi-sub{font-size:13.5px!important;color:var(--muted-2)!important}
+.kpi-tag{font-size:12.5px!important}
+.panel-hd h3,.panel-head h3{font-size:16px!important}
+.panel-hd .sub,.panel-head .sub{font-size:13.5px!important;color:var(--muted)!important}
+table.dt thead th,table.data thead th,table.att thead th{font-size:12.5px!important;color:var(--muted)!important}
+table.dt tbody td,table.data tbody td,table.att tbody td{font-size:14.5px!important;color:var(--text-2)!important}
+.emp-nm,.emp-name{font-size:14.5px!important;color:var(--text)!important;font-weight:650!important}
+.emp-id{font-size:13px!important;color:var(--muted-2)!important}
+.mono{font-size:14px!important}
+.badge{font-size:12.5px!important;padding:5px 12px!important}
+.sbar input,.sbar select,.search-bar input,.search-bar select{font-size:14.5px!important;color:var(--text)!important}
+.sbar input::placeholder,.search-bar input::placeholder{color:var(--muted)!important}
+.fi label,.form-group label{font-size:13px!important;color:var(--muted)!important}
+.fi input,.fi select,.form-group input,.form-group select{font-size:14.5px!important;color:var(--text)!important}
+.welcome h2{font-size:22px!important}
+.welcome p{font-size:15px!important;color:var(--muted)!important}
+.w-date .m{font-size:13px!important;color:var(--muted)!important}
+.btn{font-size:14px!important}
+.alert{font-size:14.5px!important}
+.legend span,.legend-item{font-size:13.5px!important;color:var(--muted)!important}
+.empty h4,.empty-state h4{font-size:16px!important;color:var(--text)!important}
+.empty p,.empty-state p{font-size:14.5px!important;color:var(--muted)!important}
