@@ -1,40 +1,38 @@
 <?php
-session_start();
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-date_default_timezone_set('Africa/Casablanca');
-
-include "../db.php";
+require __DIR__ . '/bootstrap.php';
+require_perm('export');
 
 $pageTitle = "Exports";
 $currentPage = "exports";
 
-// Handle CSV Export
-if (isset($_GET['export']) && $_GET['export'] == 'csv') {
-    $date_from = isset($_GET['from']) ? $_GET['from'] : date("Y-m-01");
-    $date_to = isset($_GET['to']) ? $_GET['to'] : date("Y-m-d");
+// Handle CSV Export (validated date range, prepared statement)
+if (isset($_GET['export']) && $_GET['export'] === 'csv') {
+    $from = (string)($_GET['from'] ?? date("Y-m-01"));
+    $to   = (string)($_GET['to'] ?? date("Y-m-d"));
+    $valid = fn($d) => (bool) preg_match('/^\d{4}-\d{2}-\d{2}$/', $d);
+    if (!$valid($from)) $from = date("Y-m-01");
+    if (!$valid($to))   $to   = date("Y-m-d");
 
-    $sql = "SELECT employees.user_id, employees.first_name, employees.last_name,
-                   employees.department, employees.position,
-                   attendance.date, attendance.time, attendance.type
-            FROM attendance
-            INNER JOIN employees ON attendance.user_id = employees.user_id
-            WHERE attendance.date BETWEEN '$date_from' AND '$date_to'
-            ORDER BY attendance.date ASC, attendance.time ASC";
+    $rows = db_all(
+        "SELECT e.user_id, e.first_name, e.last_name,
+                COALESCE(dep.name,'') AS department, COALESCE(e.position,'') AS position,
+                a.date, a.time, a.type, COALESCE(d.name,'') AS device
+         FROM attendance a
+         INNER JOIN employees e ON a.user_id = e.user_id
+         LEFT JOIN departments dep ON dep.id = e.department_id
+         LEFT JOIN devices d ON d.id = a.device_id
+         WHERE a.date BETWEEN ? AND ?
+         ORDER BY a.date ASC, a.time ASC",
+        [$from, $to]
+    );
 
-    $result = mysqli_query($conn, $sql);
-
+    audit('export.attendance');
     header('Content-Type: text/csv');
-    header('Content-Disposition: attachment; filename="attendance_' . $date_from . '_to_' . $date_to . '.csv"');
-
-    $output = fopen('php://output', 'w');
-    fputcsv($output, ['User ID', 'First Name', 'Last Name', 'Department', 'Position', 'Date', 'Time', 'Type']);
-
-    while ($row = mysqli_fetch_assoc($result)) {
-        fputcsv($output, $row);
-    }
-
-    fclose($output);
+    header('Content-Disposition: attachment; filename="attendance_' . $from . '_to_' . $to . '.csv"');
+    $out = fopen('php://output', 'w');
+    fputcsv($out, ['User ID','First Name','Last Name','Department','Position','Date','Time','Type','Device']);
+    foreach ($rows as $r) { fputcsv($out, $r); }
+    fclose($out);
     exit;
 }
 

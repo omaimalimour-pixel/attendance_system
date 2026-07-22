@@ -1,0 +1,21 @@
+<?php
+/**
+ * Local configuration override.
+ * Copy this file to config.local.php and adjust for your environment.
+ * config.local.php is git-ignored so your secrets never get committed.
+ */
+return [
+    // Database
+    'db_host' => '127.0.0.1',
+    'db_name' => 'clocking',
+    'db_user' => 'root',
+    'db_pass' => '',
+    'db_port' => 3306,
+
+    // 'development' shows detailed errors; 'production' hides them.
+    'app_env' => 'development',
+
+    // Timezone & late-arrival threshold
+    'timezone'   => 'Africa/Casablanca',
+    'work_start' => '09:00:00',
+];
