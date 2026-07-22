@@ -22,8 +22,15 @@ if ($deptFilter > 0) { $where .= " AND e.department_id = ?"; $args[] = $deptFilt
 $totalRows = (int) db_val("SELECT COUNT(*) FROM employees e $where", $args);
 $totalPages = max(1, (int) ceil($totalRows / $perPage));
 
+// Include the latest fingerprint-enrolment status per employee (if the table exists)
+$hasEnroll = db_table_exists('enrollment_requests');
+$enrollSelect = $hasEnroll
+    ? ", (SELECT r.status FROM enrollment_requests r WHERE r.employee_id = e.id
+          ORDER BY FIELD(r.status,'enrolled','sent','pending','failed') LIMIT 1) AS enroll_status"
+    : ", NULL AS enroll_status";
+
 $rows = db_all(
-    "SELECT e.*, dep.name AS dept_name
+    "SELECT e.*, dep.name AS dept_name $enrollSelect
      FROM employees e LEFT JOIN departments dep ON dep.id = e.department_id
      $where ORDER BY e.id DESC LIMIT $perPage OFFSET $offset",
     $args
@@ -58,17 +65,20 @@ include "includes/header.php";
   </form>
   <div class="table-wrap">
     <table class="data">
-      <thead><tr><th>Employee</th><th>User ID</th><th>Department</th><th>Position</th><th>Status</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Employee</th><th>User ID</th><th>Department</th><th>Position</th><th>Fingerprint</th><th>Status</th><th>Actions</th></tr></thead>
       <tbody>
       <?php if ($rows): foreach ($rows as $row):
         $colors=['#6366F1','#8B5CF6','#0BA5C7','#0EA372','#E5484D','#D98A0B']; $bg=$colors[$row['id']%6];
         $st = ($row['status'] ?? 'active');
+        $fp = $row['enroll_status'] ?? null;
+        $fpMap = ['enrolled'=>['badge-present','Enrolled'],'sent'=>['badge-dept','Sent'],'pending'=>['badge-late','Pending'],'failed'=>['badge-absent','Failed']];
       ?>
         <tr>
           <td><div class="emp-cell"><div class="emp-avatar" style="background:<?= $bg ?>"><?= e(strtoupper(substr($row['first_name'],0,1))) ?></div><div><div class="emp-name"><?= e($row['first_name'].' '.$row['last_name']) ?></div><div class="emp-id"><?= e($row['email'] ?: 'ID '.$row['user_id']) ?></div></div></div></td>
           <td class="mono"><?= (int)$row['user_id'] ?></td>
           <td><?= $row['dept_name'] ? '<span class="badge badge-dept">'.e($row['dept_name']).'</span>' : '<span style="color:#98A0B3">—</span>' ?></td>
           <td><?= e($row['position'] ?: '—') ?></td>
+          <td><?php if ($fp && isset($fpMap[$fp])): ?><span class="badge <?= $fpMap[$fp][0] ?>"><?= $fpMap[$fp][1] ?></span><?php else: ?><span style="color:#98A0B3">—</span><?php endif; ?></td>
           <td><span class="badge <?= $st==='active'?'badge-present':'badge-absent' ?>"><?= ucfirst(e($st)) ?></span></td>
           <td>
             <div class="row-actions">
@@ -84,7 +94,7 @@ include "includes/header.php";
           </td>
         </tr>
       <?php endforeach; else: ?>
-        <tr><td colspan="6"><div class="empty-state"><h4>No employees found</h4><p>Try adjusting your search or add a new employee.</p></div></td></tr>
+        <tr><td colspan="7"><div class="empty-state"><h4>No employees found</h4><p>Try adjusting your search or add a new employee.</p></div></td></tr>
       <?php endif; ?>
       </tbody>
     </table>
