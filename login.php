@@ -25,8 +25,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     } elseif (login_is_locked($username)) {
         $error = "Too many failed attempts. Please try again in a few minutes.";
     } else {
-        // Prepared statement — no SQL injection possible
-        $user = db_one("SELECT * FROM admin_users WHERE username=? AND status='active' LIMIT 1", [$username]);
+        // Query works even if the 'status' column doesn't exist yet (pre-install.php DBs)
+        $user = db_one("SELECT * FROM admin_users WHERE username=? LIMIT 1", [$username]);
+        // If status column exists, enforce active status
+        if ($user && isset($user['status']) && $user['status'] !== 'active') {
+            $user = null; // treat inactive as not found
+        }
 
         if ($user && password_verify($password, $user['password'])) {
             // Prevent session fixation
