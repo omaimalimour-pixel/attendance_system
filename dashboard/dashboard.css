@@ -242,3 +242,62 @@ table.dt tbody tr:last-child td,table.data tbody tr:last-child td,table.att tbod
   .fg,.form-grid{grid-template-columns:1fr}
 }
 @media(max-width:575px){.kpi-grid{grid-template-columns:1fr}.sbar,.search-bar{flex-direction:column}.sbar input,.sbar select,.search-bar input,.search-bar select{width:100%}.welcome-inner .w-date{display:none}}
+
+
+
+/* ==========================================================================
+   MARKET-READY SUPPLEMENT — classes used by devices/departments/users/
+   employees/attendance/analytics/forms. Uses the light theme tokens above.
+   ========================================================================== */
+.table-wrap{overflow-x:auto}
+.stat-mini{display:flex;align-items:center;gap:13px;padding:16px 18px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh-sm)}
+.kpi-icon{width:40px;height:40px;border-radius:var(--rs);display:grid;place-items:center}
+.kpi-icon svg{width:19px;height:19px}
+.kpi-icon.blue{background:#EFF6FF;color:#2563EB}
+.kpi-icon.green{background:var(--green-soft);color:var(--green)}
+.kpi-icon.rose{background:var(--red-soft);color:var(--red)}
+.kpi-icon.amber{background:var(--amber-soft);color:var(--amber)}
+.kpi-icon.violet{background:var(--accent-soft);color:var(--accent)}
+
+/* Row actions success/danger hover */
+.row-act.success:hover{color:var(--green);border-color:var(--green);background:var(--green-soft)}
+.row-act.danger:hover{color:var(--red);border-color:var(--red);background:var(--red-soft)}
+.row-actions{display:flex;gap:6px;align-items:center}
+.row-actions form{display:inline}
+
+/* Alerts */
+.alert{display:flex;align-items:center;gap:9px;padding:12px 16px;border-radius:var(--rr);margin-bottom:16px;font-size:13px;font-weight:500}
+.alert-success{background:var(--green-soft);color:var(--green);border:1px solid rgba(14,163,114,.2)}
+.alert-danger{background:var(--red-soft);color:var(--red);border:1px solid rgba(229,72,77,.2)}
+
+/* Empty state */
+.empty-state{text-align:center;padding:44px 16px;color:var(--muted)}
+.empty-state h4{font-size:14px;font-weight:600;color:var(--text);margin-bottom:5px}
+
+/* Date input (filter) */
+.date-input{display:flex;align-items:center;gap:8px;padding:0 13px;height:40px;background:#fff;border:1px solid var(--border);border-radius:var(--rr)}
+.date-input svg{width:15px;height:15px;color:var(--dim)}
+.date-input input{border:none;background:transparent;color:var(--text);font-size:13px;font-family:var(--font);font-weight:600;outline:none}
+
+/* Grid helpers used by analytics/sync */
+.col-lg-8{flex:0 0 66.66%;max-width:66.66%;padding:0 9px}
+.col-lg-4{flex:0 0 33.33%;max-width:33.33%;padding:0 9px}
+.col-6{flex:0 0 50%;max-width:50%;padding:0 9px}
+.h-100{height:100%}.g-3{gap:0}
+@media(max-width:991px){.col-lg-8,.col-lg-4,.col-6{flex:0 0 100%;max-width:100%}}
+
+/* Analytics old-table bridge */
+table.att{width:100%;border-collapse:collapse}
+table.att thead th{padding:12px 22px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--dim);background:var(--card-2);border-bottom:1px solid var(--border);white-space:nowrap}
+table.att tbody td{padding:14px 22px;font-size:13.5px;color:var(--text-2);border-bottom:1px solid var(--line)}
+table.att tbody tr:hover{background:var(--card-2)}
+.table-scroll{overflow-x:auto}
+.emp{display:flex;align-items:center;gap:11px}
+.chart-box-sm{position:relative;height:220px}
+
+/* Modals (devices/departments/users use .cx-modal) */
+.cx-modal{position:fixed;inset:0;background:rgba(11,16,32,.5);backdrop-filter:blur(3px);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px}
+.cx-modal-card{width:100%;max-width:640px;background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--sh-lg);overflow:hidden}
+.cx-modal-hd{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
+.cx-modal-hd h3{font-size:15px;font-weight:700}
+.cx-x{border:none;background:none;font-size:24px;line-height:1;color:var(--muted);cursor:pointer}

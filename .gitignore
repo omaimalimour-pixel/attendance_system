@@ -1,0 +1,11 @@
+# Local secrets & environment overrides
+core/config.local.php
+.env
+
+# Dependencies
+/vendor/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.log

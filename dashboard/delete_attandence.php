@@ -1,31 +1,22 @@
 <?php
-session_start();
-include "../db.php";
+require __DIR__ . '/bootstrap.php';
+require_perm('attendance.manage');
 
-if (!isset($_GET['id'])) {
-    header("Location: attendance.php");
-    exit;
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header("Location: attendance.php"); exit; }
+csrf_verify();
+
+$userId = (int) inp($_POST, 'user_id');
+$date   = inp($_POST, 'date');
+
+if ($userId > 0) {
+    if ($date !== '') {
+        db_exec("DELETE FROM attendance WHERE user_id=? AND date=?", [$userId, $date]);
+        audit('attendance.delete_day', 'attendance', $userId);
+        header("Location: attendance.php?date=" . urlencode($date));
+        exit;
+    }
+    db_exec("DELETE FROM attendance WHERE user_id=?", [$userId]);
+    audit('attendance.delete_all', 'attendance', $userId);
 }
-
-$user_id = (int)$_GET['id'];
-$date = isset($_GET['date']) ? mysqli_real_escape_string($conn, $_GET['date']) : "";
-
-// Verify employee exists
-$result = mysqli_query($conn, "SELECT * FROM employees WHERE user_id='$user_id'");
-if (mysqli_num_rows($result) == 0) {
-    header("Location: attendance.php");
-    exit;
-}
-
-if ($date != "") {
-    // Delete only for specific date
-    mysqli_query($conn, "DELETE FROM attendance WHERE user_id='$user_id' AND date='$date'");
-    header("Location: attendance.php?date=$date");
-} else {
-    // Delete all attendance for this employee
-    mysqli_query($conn, "DELETE FROM attendance WHERE user_id='$user_id'");
-    header("Location: attendance.php");
-}
-
+header("Location: attendance.php");
 exit;
-?>
