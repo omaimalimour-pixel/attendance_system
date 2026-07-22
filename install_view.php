@@ -1,5 +1,6 @@
 <?php
-/** ChronoX — Installer result page. */
+// Guard: never access this file directly
+if (!isset($steps) || !is_array($steps)) { header('Location: install.php'); exit; }
 $allOk = true;
 foreach ($steps as $s) { if (!$s[0]) { $allOk = false; break; } }
 ?>
