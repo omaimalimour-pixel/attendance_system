@@ -30,17 +30,22 @@ if (!$device) {
     step(true,'Created ZKTeco IN01 device and linked to DEV');
 } else {
     $fixed = false;
-    if ((int)$device['department_id'] !== $devId) {
-        db_exec("UPDATE devices SET department_id=? WHERE id=?",[$devId,(int)$device['id']]);
+    if ((int)$device['department_id'] !== (int)$devId) {
+        db_exec("UPDATE devices SET department_id=? WHERE id=?", [$devId, (int)$device['id']]);
         $fixed = true;
     }
     if ($device['status'] !== 'active') {
-        db_exec("UPDATE devices SET status='active' WHERE id=?",(int)[$device['id']]);
+        db_exec("UPDATE devices SET status='active' WHERE id=?", [(int)$device['id']]);
         $fixed = true;
     }
-    step(true,$fixed
-        ? 'Fixed: ZKTeco IN01 linked to DEV department ✓'
-        : 'ZKTeco IN01 already correctly linked to DEV ✓');
+    // Rename from old "Engineering Entrance" → "ZKTeco IN01 – DEV"
+    if ($device['name'] !== 'ZKTeco IN01 – DEV') {
+        db_exec("UPDATE devices SET name='ZKTeco IN01 \xe2\x80\x93 DEV' WHERE id=?", [(int)$device['id']]);
+        $fixed = true;
+    }
+    step(true, $fixed
+        ? 'Fixed: device renamed "ZKTeco IN01 – DEV" and linked to DEV department ✓'
+        : 'ZKTeco IN01 already correctly configured ✓');
 }
 
 /* 3. Re-push stuck pending enrollments */

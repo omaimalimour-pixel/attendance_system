@@ -82,8 +82,12 @@ include "includes/header.php";
     </div>
     <div class="form-actions">
       <a href="add_employee.php" class="btn">Add Another</a>
+      <a href="enroll_finger.php?emp=<?= (int)$newEmployee['id'] ?>" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M12 11c0 3.5-2 6-2 6M7 8a5 5 0 0 1 10 0v2M5 12a7 7 0 0 1 .5-2.6M12 8v5a8 8 0 0 0 2 5M9 20a12 12 0 0 1-1.5-6"/></svg>
+        Enroll Fingerprint →
+      </a>
       <a href="enrollment.php" class="btn">Enrolment Queue</a>
-      <a href="employees.php" class="btn btn-primary">Done</a>
+      <a href="employees.php" class="btn">Done</a>
     </div>
   </div>
 <?php else: ?>

@@ -140,6 +140,87 @@ function device_remove_user(array $device, int $uid): array
     }
 }
 
+/* ─── Live fingerprint enrollment ──────────────────────────────── */
+
+/**
+ * Send CMD_ENROLL_FP (0x3D = 61) to the ZKTeco terminal.
+ *
+ * This is EXACTLY what ZK Bio Time.Net does when you click "Enroll Fingerprint"
+ * and select a finger number. The terminal screen shows "Place finger" and the
+ * employee scans their biometric directly on the device.
+ *
+ * Protocol:
+ *   - Command:  61  (0x3D — standard ZKTeco fingerprint enroll command)
+ *   - Payload:  uid_lo + uid_hi + finger_id + flag(3)
+ *   - flag=1 → overwrite if exists, flag=3 → normal new enroll
+ *
+ * Finger index (ZK standard numbering, same as ZK Bio Time.Net hand diagram):
+ *   Right hand: 0=Pinky  1=Ring  2=Middle  3=Index  4=Thumb
+ *   Left  hand: 5=Thumb  6=Index 7=Middle  8=Ring   9=Pinky
+ *
+ * @return array [bool $ok, string $message]
+ */
+function device_enroll_finger(array $device, array $employee, int $finger = 1): array
+{
+    if (!device_lib_available()) {
+        return [false, 'ZKTeco library not installed. Run: composer install in project root.'];
+    }
+    if ($finger < 0 || $finger > 9) {
+        return [false, "Finger index must be 0–9 (got $finger)."];
+    }
+
+    try {
+        $zk = _zk($device['ip_address'], (int)$device['port']);
+        if (!$zk->connect()) {
+            return [false, "Cannot connect to {$device['name']} at {$device['ip_address']}:{$device['port']}. Make sure the device is on and reachable."];
+        }
+
+        $uid  = (int)$employee['user_id'];
+        $name = trim(($employee['first_name'] ?? '') . ' ' . ($employee['last_name'] ?? ''));
+        if (strlen($name) > 24) $name = substr($name, 0, 24);
+        if ($name === '') $name = 'User ' . $uid;
+
+        // Step 1 — register the user on the device so it recognises the UID
+        $zk->disableDevice();
+        $zk->setUser($uid, (string)$uid, $name, '', 0, 0);
+        $zk->enableDevice();
+
+        // Step 2 — send CMD_ENROLL_FP = 61 (0x3D)
+        // Payload format (ZKTeco SDK spec):
+        //   byte 0: uid low byte
+        //   byte 1: uid high byte
+        //   byte 2: finger index (0-9)
+        //   byte 3: flag — 1=overwrite existing, 3=new enroll
+        $payload = pack('vCC', $uid, $finger, 3);  // 'v' = little-endian uint16
+
+        $response = $zk->_command(61, $payload);
+        $zk->disconnect();
+
+        if ($response === false) {
+            // Some firmware versions require disabling the device first
+            // Try alternative approach: just push user (device will prompt on next touch)
+            return [false,
+                "CMD_ENROLL_FP rejected. Your firmware may not support remote enroll trigger. " .
+                "Instead: go to the IN01 terminal → Menu → User Mgmt → Enroll FP → enter UID $uid → scan finger."
+            ];
+        }
+
+        $fingerNames = [
+            0=>'Right Pinky', 1=>'Right Ring', 2=>'Right Middle', 3=>'Right Index', 4=>'Right Thumb',
+            5=>'Left Thumb',  6=>'Left Index',  7=>'Left Middle',  8=>'Left Ring',   9=>'Left Pinky',
+        ];
+        $fname = $fingerNames[$finger] ?? "Finger $finger";
+
+        return [true,
+            "✓ Enrollment started on {$device['name']} for {$name} — {$fname}. " .
+            "The terminal screen shows 'Place finger'. Ask the employee to scan their {$fname} on the IN01 NOW."
+        ];
+
+    } catch (\Throwable $e) {
+        return [false, 'Device error: ' . $e->getMessage()];
+    }
+}
+
 /* ─── Enrolment request lifecycle ──────────────────────────────── */
 
 /**
