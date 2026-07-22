@@ -57,15 +57,20 @@ foreach ($devs as $dev) {
         }
 
         // ── Step 1: build device_uid → employee_user_id map ───────────
-        // getUser() returns array keyed by userid string, each with 'uid' (internal index)
-        // e.g. ["990" => {uid:3, name:"FIDAE"}, "2007" => {uid:1, ...}]
+        // getUser() returns array keyed by userid string, each value has:
+        //   'uid'    => internal device slot (int, always set, e.g. 3)
+        //   'userid' => the employee ID string (e.g. "990", or "" if enrolled without ID)
+        //
+        // IMPORTANT: use $u['userid'] directly — NOT the array key.
+        // The array key is also the userid string but can be unreliable for empty strings
+        // (PHP merges duplicate '' keys, losing all but the last one).
         $deviceUserList = $zk->getUser();
-        $uidMap = []; // device internal uid (int) → employee user_id (int)
-        foreach ((array)$deviceUserList as $userIdStr => $u) {
-            $internalUid = (int)($u['uid'] ?? 0);
-            $employeeId  = (int)trim((string)$userIdStr);
-            if ($internalUid > 0 && $employeeId > 0) {
-                $uidMap[$internalUid] = $employeeId;
+        $uidMap = []; // device internal slot (int) → employee user_id (int)
+        foreach ((array)$deviceUserList as $u) {
+            $internalSlot = (int)($u['uid']    ?? 0);
+            $employeeId   = (int)trim((string)($u['userid'] ?? ''));
+            if ($internalSlot > 0 && $employeeId > 0) {
+                $uidMap[$internalSlot] = $employeeId;
             }
         }
 
@@ -92,34 +97,58 @@ foreach ($devs as $dev) {
             $type = (isset($a['type']) && (int)$a['type'] === 1) ? 'OUT' : 'IN';
 
             // Resolve employee user_id:
-            // 1st: look up device's internal uid in the map we built above
-            // 2nd: fall back to $a['id'] string (if the user typed their ID when enrolling)
+            // 1st: look up device's internal slot in the map from getUser()  ← most reliable
+            // 2nd: fall back to $a['id'] string (user typed their ID on enrolment)
             // 3rd: use $a['uid'] directly as last resort
-            $internalUid = (int)($a['uid'] ?? 0);
-            if (isset($uidMap[$internalUid])) {
-                $userId = $uidMap[$internalUid];   // ← best: from getUser() map
+            $internalSlot = (int)($a['uid'] ?? 0);
+            if (isset($uidMap[$internalSlot])) {
+                $userId = $uidMap[$internalSlot];
             } else {
                 $rawId  = trim((string)($a['id'] ?? ''));
-                $userId = $rawId !== '' ? (int)$rawId : $internalUid;
+                $userId = $rawId !== '' ? (int)$rawId : $internalSlot;
             }
 
             if ($userId <= 0) { $skipped++; continue; }
 
-            // Deduplicate: (user_id + date + time + type) only
-            // Do NOT include device_id — old records have device_id=0 (string stored as int)
-            $dup = db_val("SELECT id FROM attendance WHERE user_id=? AND date=? AND time=? AND type=?",
-                [$userId, $date, $time, $type]);
-            if ($dup) { $skipped++; continue; }
+            // ── Smart dedup (3 cases) ──────────────────────────────────
+            // Case A: correct record already exists → skip (true duplicate)
+            $correctDup = db_val(
+                "SELECT id FROM attendance WHERE user_id=? AND date=? AND time=? AND type=?",
+                [$userId, $date, $time, $type]
+            );
+            if ($correctDup) { $skipped++; continue; }
 
-            db_exec("INSERT INTO attendance (user_id, device_id, date, time, type, raw) VALUES (?,?,?,?,?,?)",
-                [$userId, $dev['id'], $date, $time, $type, json_encode($a)]);
+            // Case B: record exists under WRONG user_id (old internal slot ≠ employee id)
+            // UPDATE it to the correct user_id — no duplicate created.
+            if ($internalSlot !== $userId) {
+                $wrongRow = db_val(
+                    "SELECT id FROM attendance WHERE user_id=? AND date=? AND time=? AND type=?",
+                    [$internalSlot, $date, $time, $type]
+                );
+                if ($wrongRow) {
+                    db_exec(
+                        "UPDATE attendance SET user_id=?, device_id=? WHERE id=?",
+                        [$userId, (int)$dev['id'], (int)$wrongRow]
+                    );
+                    $imported++;
+                    continue;
+                }
+            }
+
+            // Case C: genuinely new record → insert
+            db_exec(
+                "INSERT INTO attendance (user_id, device_id, date, time, type, raw) VALUES (?,?,?,?,?,?)",
+                [$userId, $dev['id'], $date, $time, $type, json_encode($a)]
+            );
             $imported++;
 
             // Auto-create placeholder employee for unknown user IDs
             if (!db_val("SELECT id FROM employees WHERE user_id=?", [$userId])) {
                 $nameOnDevice = trim((string)($a['name'] ?? ''));
-                db_exec("INSERT IGNORE INTO employees (user_id,first_name,last_name,status) VALUES (?,?,?,'active')",
-                    [$userId, $nameOnDevice ?: 'Unknown', (string)$userId]);
+                db_exec(
+                    "INSERT IGNORE INTO employees (user_id,first_name,last_name,status) VALUES (?,?,?,'active')",
+                    [$userId, $nameOnDevice ?: 'Unknown', (string)$userId]
+                );
             }
         }
 

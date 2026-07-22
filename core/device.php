@@ -81,12 +81,55 @@ function device_get_users(array $device): array
 /* ─── Push user to device (enables fingerprint enrolment) ────────── */
 
 /**
+ * Resolve the correct internal device slot (uid) for an employee.
+ *
+ * ZKTeco has TWO separate concepts:
+ *   - uid      = internal slot number (1, 2, 3 …) assigned by the device
+ *   - userid   = the employee ID string we want ("990", "2007" …)
+ *
+ * setUser($uid, $userid, ...) MUST use the RIGHT internal slot.
+ * If we blindly use employee->user_id as the slot, we create a SECOND
+ * entry on the device (slot #990) while the fingerprint stays on slot #3
+ * with userid="" → punches never match.
+ *
+ * This helper:
+ *   1. Calls getUser() to read all current device users
+ *   2. If the employee's userid already exists on the device → returns that slot
+ *   3. If not → returns the next free slot (max_uid + 1, capped at 65535)
+ *
+ * Returns int slot number, or 0 on failure.
+ */
+function device_resolve_uid(\Rats\Zkteco\Lib\ZKTeco $zk, string $employeeUserId): int
+{
+    $existing = $zk->getUser();
+    if (!is_array($existing)) return 1;
+
+    $maxUid  = 0;
+    foreach ($existing as $u) {
+        $devUid    = (int)($u['uid']    ?? 0);
+        $devUserId = trim((string)($u['userid'] ?? ''));
+        if ($devUserId === $employeeUserId) {
+            return $devUid; // already on device — reuse same slot
+        }
+        if ($devUid > $maxUid) $maxUid = $devUid;
+    }
+
+    // Not found → next free slot
+    $next = $maxUid + 1;
+    return ($next > 0 && $next <= 65535) ? $next : 1;
+}
+
+/**
  * Push ONE employee to ONE device so they can register their fingerprint.
  *
  * The ZKTeco IN01 flow:
- *   1. App calls setUser() → device knows the user ID & name.
- *   2. Employee walks to the terminal and places finger → device stores the template.
- *   3. From that point on, every punch is recognised and sent back on sync.
+ *   1. App calls setUser(slot, employeeId, name) → device stores user.
+ *   2. Employee walks to terminal, places finger → device stores template.
+ *   3. Every punch is now recognised and synced with the correct employee ID.
+ *
+ * KEY FIX: uid (param 1) = internal device slot (resolved via device_resolve_uid)
+ *          userid (param 2) = employee's user_id string ("990")
+ *          These are TWO different things — must not use the same value for both.
  *
  * Returns [bool $ok, string $message]
  */
@@ -101,21 +144,25 @@ function device_push_user(array $device, array $employee): array
             return [false, "Device offline at {$device['ip_address']}:{$device['port']} — request saved as pending."];
         }
 
-        $uid  = (int)$employee['user_id'];   // numeric UID (max 65535)
+        $employeeUserId = (string)(int)$employee['user_id']; // e.g. "990"
         $name = trim(($employee['first_name'] ?? '') . ' ' . ($employee['last_name'] ?? ''));
-        if ($name === '') $name = 'User ' . $uid;
-        if (strlen($name) > 24) $name = substr($name, 0, 24); // device limit
+        if ($name === '') $name = 'User ' . $employeeUserId;
+        if (strlen($name) > 24) $name = substr($name, 0, 24);
+
+        // Get the correct internal slot for this employee
+        $slot = device_resolve_uid($zk, $employeeUserId);
 
         $zk->disableDevice();
-        $ok = $zk->setUser($uid, (string)$uid, $name, '', 0, 0);
+        // setUser(internalSlot, employeeIdString, name, password, role, cardno)
+        $ok = $zk->setUser($slot, $employeeUserId, $name, '', 0, 0);
         $zk->enableDevice();
         $zk->disconnect();
 
         if ($ok === false) {
-            return [false, "setUser() returned false for UID {$uid} on {$device['name']}."];
+            return [false, "setUser() failed for slot={$slot}, userid={$employeeUserId} on {$device['name']}."];
         }
 
-        return [true, "User '{$name}' (UID {$uid}) pushed to {$device['name']} ({$device['ip_address']}). Employee can now scan their finger on that machine."];
+        return [true, "User '{$name}' (slot={$slot}, ID={$employeeUserId}) registered on {$device['name']} ({$device['ip_address']}). Employee can now scan their finger."];
     } catch (\Throwable $e) {
         return [false, 'Device exception: ' . $e->getMessage()];
     }
@@ -167,17 +214,22 @@ function device_enroll_finger(array $device, array $employee, int $finger = 1): 
             return [false, "Cannot connect to {$device['name']} ({$device['ip_address']}:{$device['port']}). Check the device is on."];
         }
 
-        $uid  = (int)$employee['user_id'];
+        $employeeUserId = (string)(int)$employee['user_id']; // e.g. "990"
         $name = trim(($employee['first_name'] ?? '') . ' ' . ($employee['last_name'] ?? ''));
         if (strlen($name) > 24) $name = substr($name, 0, 24);
-        if ($name === '') $name = 'User ' . $uid;
+        if ($name === '') $name = 'User ' . $employeeUserId;
+
+        // KEY FIX: resolve the correct internal device slot for this employee.
+        // Do NOT use employee user_id as the slot — the device manages its own slot numbers.
+        $slot = device_resolve_uid($zk, $employeeUserId);
 
         $zk->disableDevice();
-        $zk->setUser($uid, (string)$uid, $name, '', 0, 0);
+        // setUser(internalSlot, employeeIdString, name, password, role, cardno)
+        $zk->setUser($slot, $employeeUserId, $name, '', 0, 0);
         $zk->enableDevice();
 
         // CMD_ENROLL_FP = 61: triggers the fingerprint screen on the terminal
-        $response = $zk->_command(61, pack('vCC', $uid, $finger, 3));
+        $response = $zk->_command(61, pack('vCC', $slot, $finger, 3));
         $zk->disconnect();
 
         $fingerNames = [
@@ -187,10 +239,10 @@ function device_enroll_finger(array $device, array $employee, int $finger = 1): 
         $fname = $fingerNames[$finger] ?? "Finger $finger";
 
         if ($response === false) {
-            // CMD 61 not supported by this firmware — user is still registered via setUser
+            // CMD 61 not supported — user is still registered via setUser above
             return [true,
-                "User \"{$name}\" (UID {$uid}) registered on {$device['name']}. " .
-                "Go to IN01: Menu → User Mgmt → Enroll FP → UID {$uid} → scan {$fname}."
+                "User \"{$name}\" (slot={$slot}, ID={$employeeUserId}) registered on {$device['name']}. " .
+                "Go to IN01: Menu → User Mgmt → Enroll FP → UID {$slot} → scan {$fname}."
             ];
         }
 
