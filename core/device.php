@@ -173,8 +173,11 @@ function device_enroll_finger(array $device, array $employee, int $finger = 1): 
         if ($name === '') $name = 'User ' . $uid;
 
         $zk->disableDevice();
-        $ok = $zk->setUser($uid, (string)$uid, $name, '', 0, 0);
+        $zk->setUser($uid, (string)$uid, $name, '', 0, 0);
         $zk->enableDevice();
+
+        // CMD_ENROLL_FP = 61: triggers the fingerprint screen on the terminal
+        $response = $zk->_command(61, pack('vCC', $uid, $finger, 3));
         $zk->disconnect();
 
         $fingerNames = [
@@ -183,9 +186,17 @@ function device_enroll_finger(array $device, array $employee, int $finger = 1): 
         ];
         $fname = $fingerNames[$finger] ?? "Finger $finger";
 
+        if ($response === false) {
+            // CMD 61 not supported by this firmware — user is still registered via setUser
+            return [true,
+                "User \"{$name}\" (UID {$uid}) registered on {$device['name']}. " .
+                "Go to IN01: Menu → User Mgmt → Enroll FP → UID {$uid} → scan {$fname}."
+            ];
+        }
+
         return [true,
-            "User \"{$name}\" (UID {$uid}) registered on {$device['name']}. " .
-            "Ask the employee to: Menu → User Mgmt → Enroll FP → enter UID {$uid} → scan {$fname}."
+            "✓ Fingerprint screen activated on {$device['name']} — {$name} ({$fname}). " .
+            "Terminal shows 'Place finger'. Ask the employee to scan NOW."
         ];
 
     } catch (\Throwable $e) {
