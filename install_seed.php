@@ -1,8 +1,9 @@
 <?php
 /**
- * ChronoX — Seed starter data (idempotent).
- * Included by install.php after the schema is created.
+ * ChronoX — Seed starter data.
+ * Included by install.php ONLY — never access directly.
  */
+if (!function_exists('db_val')) { header('Location: install.php'); exit; }
 
 /* Departments (5) — one per clocking machine, as in a real company */
 $departments = [
