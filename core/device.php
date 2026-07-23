@@ -177,7 +177,11 @@ function device_enroll_finger(array $device, array $employee, int $finger = 1): 
         $zk->enableDevice();
 
         // CMD 61 = start fingerprint enrollment on the terminal
-        $response = $zk->_command(61, pack('vCC', $uid, $finger, 3));
+        // CRITICAL FIX: userid must be sent as ASCII string, NOT packed binary integer.
+        // pack('vCC', 990, ...) produces bytes 0xDE 0x03 which the device displays as garbage.
+        // Correct format: null-padded userid string (same format as setUser uses internally)
+        $cmdPayload = str_pad((string)$uid, 9, chr(0)) . chr($finger) . chr(3);
+        $response = $zk->_command(61, $cmdPayload);
         $zk->disconnect();
 
         $fingerNames = [
