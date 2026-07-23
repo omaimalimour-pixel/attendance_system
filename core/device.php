@@ -146,7 +146,9 @@ function device_push_user(array $device, array $employee): array
 
         $employeeUserId = (string)(int)$employee['user_id']; // e.g. "990"
         $name = trim(($employee['first_name'] ?? '') . ' ' . ($employee['last_name'] ?? ''));
-        if ($name === '') $name = 'User ' . $employeeUserId;
+        // ZKTeco firmware is ASCII-only. Multi-byte UTF-8 chars appear as garbage/emojis.
+        $name = preg_replace('/[^\x20-\x7E]/', '', $name);
+        if ($name === '') $name = 'User' . $employeeUserId;
         if (strlen($name) > 24) $name = substr($name, 0, 24);
 
         // Get the correct internal slot for this employee
@@ -216,8 +218,10 @@ function device_enroll_finger(array $device, array $employee, int $finger = 1): 
 
         $employeeUserId = (string)(int)$employee['user_id']; // e.g. "990"
         $name = trim(($employee['first_name'] ?? '') . ' ' . ($employee['last_name'] ?? ''));
+        // ZKTeco firmware is ASCII-only. Multi-byte UTF-8 chars appear as garbage/emojis.
+        $name = preg_replace('/[^\x20-\x7E]/', '', $name);
         if (strlen($name) > 24) $name = substr($name, 0, 24);
-        if ($name === '') $name = 'User ' . $employeeUserId;
+        if ($name === '') $name = 'User' . $employeeUserId;
 
         // KEY FIX: resolve the correct internal device slot for this employee.
         // Do NOT use employee user_id as the slot — the device manages its own slot numbers.
