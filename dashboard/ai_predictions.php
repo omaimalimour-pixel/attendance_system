@@ -30,7 +30,14 @@ if ($tableReady) {
         );
 
         foreach ($predictions as $prediction) {
-            $dataSource = substr($prediction['model_version'] ?? '', -5) === '-demo' ? 'demo' : 'real';
+            $modelVersion = $prediction['model_version'] ?? '';
+            if (substr($modelVersion, -10) === '-synthetic') {
+                $dataSource = 'synthetic';
+            } elseif (substr($modelVersion, -5) === '-demo') {
+                $dataSource = 'demo';
+            } else {
+                $dataSource = 'real';
+            }
             $level = $prediction['risk_level'];
             if (isset($counts[$level])) {
                 $counts[$level]++;
@@ -74,7 +81,7 @@ include __DIR__ . '/includes/header.php';
         <h2>Predicted absence risk</h2>
         <p>Random Forest estimates the next absence risk from each employee's previous attendance pattern.</p>
     </div>
-    <div class="ai-chip">Random Forest<?= $dataSource === 'demo' ? ' · Demo data' : '' ?> · <?= e($predictionDate ?: 'No prediction yet') ?></div>
+    <div class="ai-chip">Random Forest<?= $dataSource === 'synthetic' ? ' · Synthetic SQL data' : ($dataSource === 'demo' ? ' · Legacy demo data' : '') ?> · <?= e($predictionDate ?: 'No prediction yet') ?></div>
 </div>
 
 <?php if (!$tableReady): ?>
@@ -82,18 +89,18 @@ include __DIR__ . '/includes/header.php';
         <strong>The AI module has not been initialized.</strong><br>
         From the project root, install the Python requirements and run:
         <br><code>python ai\predict_absences.py</code>
-        <br>For a demonstration without real history: <code>python ai\predict_absences.py --demo</code>
     </div>
 <?php elseif (!$predictionDate || !$predictions): ?>
     <div class="ai-help">
         <strong>No prediction is available yet.</strong><br>
         Synchronize the latest punches, then run:
         <br><code>python ai\predict_absences.py</code>
-        <br>For a demonstration without real history: <code>python ai\predict_absences.py --demo</code>
     </div>
 <?php else: ?>
-    <?php if ($dataSource === 'demo'): ?>
-        <div class="alert alert-warning">Demo mode: these results use synthetic training history and are not real employee forecasts.</div>
+    <?php if ($dataSource === 'synthetic'): ?>
+        <div class="alert alert-warning">Synthetic SQL data: these results test the AI workflow and are not real employee forecasts.</div>
+    <?php elseif ($dataSource === 'demo'): ?>
+        <div class="alert alert-warning">Legacy demo data: run the current Python command again to replace these results.</div>
     <?php endif; ?>
     <div class="ai-grid">
         <div class="ai-stat ai-high"><span>High risk</span><strong><?= (int)$counts['high'] ?></strong></div>
