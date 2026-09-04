@@ -9,3 +9,7 @@ core/config.local.php
 .DS_Store
 Thumbs.db
 *.log
+# AI generated artifacts
+/.venv/
+/ai/model.joblib
+/ai/__pycache__/

@@ -1,0 +1,3 @@
+# Optional: one non-working date per line (YYYY-MM-DD).
+# Example:
+# 2026-01-01
