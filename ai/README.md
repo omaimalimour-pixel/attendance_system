@@ -28,24 +28,17 @@ python ai\predict_absences.py
 Le script crée automatiquement la table MySQL nécessaire, entraîne le modèle,
 enregistre `ai/model.joblib` localement et sauvegarde les prédictions dans MySQL.
 
-### Démonstration sans historique réel
+### Données ajoutées par SQL
 
-Pour vérifier immédiatement l’interface sans ajouter de faux pointages dans les
-tables réelles :
-
-```powershell
-python ai\predict_absences.py --demo
-```
-
-Ce mode fabrique un historique d’apprentissage, l’enregistre dans la table
-`ai_training_data`, puis entraîne le modèle. Il conserve les vrais noms d’employés
-pour l’affichage et marque les résultats **Demo data**. Il ne modifie ni
-`employees` ni `attendance`.
+Le script utilise uniquement les employés et les pointages présents dans MySQL.
+Les pointages dont la colonne `raw` contient `SQL_AI_TRAINING` sont reconnus
+comme données synthétiques et les résultats sont clairement signalés dans
+l’interface. La commande `--demo` n’est plus utilisée.
 
 Ouvrir ensuite :
 
 ```text
-http://localhost/clocking/dashboard/ai_predictions.php
+http://localhost/attendance_system/dashboard/ai_predictions.php
 ```
 
 Si le dossier placé dans `htdocs` porte un autre nom, remplacer `clocking` dans
