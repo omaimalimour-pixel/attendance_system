@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import os
-import random
 import sys
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -54,11 +53,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--prediction-date",
         help="Target date in YYYY-MM-DD format (default: next workday).",
-    )
-    parser.add_argument(
-        "--demo",
-        action="store_true",
-        help="Use deterministic synthetic history without changing real attendance data.",
     )
     return parser.parse_args()
 
@@ -189,7 +183,7 @@ def ensure_training_table(connection) -> None:
                 absence_streak INT NOT NULL,
                 history_days INT NOT NULL,
                 absent TINYINT(1) NOT NULL,
-                data_source ENUM('real','demo') NOT NULL,
+                data_source ENUM('real','demo','synthetic') NOT NULL,
                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 INDEX idx_ai_training_source (data_source),
                 INDEX idx_ai_training_date (sample_date),
@@ -197,6 +191,13 @@ def ensure_training_table(connection) -> None:
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             """
         )
+        cursor.execute("SHOW COLUMNS FROM ai_training_data LIKE 'data_source'")
+        source_column = cursor.fetchone()
+        if source_column and "'synthetic'" not in str(source_column[1]):
+            cursor.execute(
+                "ALTER TABLE ai_training_data "
+                "MODIFY data_source ENUM('real','demo','synthetic') NOT NULL"
+            )
         connection.commit()
     finally:
         cursor.close()
@@ -224,7 +225,9 @@ def load_source_data(connection, history_end: date):
     attendance = fetch_rows(
         connection,
         """
-        SELECT user_id, date, MIN(time) AS first_punch
+        SELECT user_id, date, MIN(time) AS first_punch,
+               MAX(CASE WHEN raw = 'SQL_AI_TRAINING' THEN 1 ELSE 0 END)
+                   AS synthetic_source
         FROM attendance
         WHERE date BETWEEN %s AND %s
         GROUP BY user_id, date
@@ -247,38 +250,13 @@ def load_source_data(connection, history_end: date):
         else os.getenv("CHRONOX_AI_WORK_START", "09:00:00")
     )
     work_start = as_time(work_start_value)
-    return employees, attendance, work_start
+    data_source = (
+        "synthetic"
+        if any(int(row.get("synthetic_source") or 0) for row in attendance)
+        else "real"
+    )
+    return employees, attendance, work_start, data_source
 
-
-def generate_demo_history(
-    employees: list[dict[str, Any]], calendar: list[date]
-) -> tuple[list[dict[str, Any]], dict[int, dict[date, bool]]]:
-    """Create repeatable in-memory attendance patterns for interface demonstration."""
-    rng = random.Random(42)
-    demo_employees: list[dict[str, Any]] = []
-    punches: dict[int, dict[date, bool]] = {}
-
-    for position, employee in enumerate(employees):
-        demo_employee = dict(employee)
-        demo_employee["created_at"] = datetime.combine(calendar[0], datetime.min.time())
-        demo_employees.append(demo_employee)
-
-        user_id = int(employee["user_id"])
-        user_punches: dict[date, bool] = {}
-        absence_probability = 0.05 + (position % 5) * 0.045
-        late_probability = 0.08 + (position % 4) * 0.04
-
-        for index, day in enumerate(calendar):
-            monday_effect = 0.05 if day.weekday() == 0 else 0.0
-            recent_effect = 0.18 if position % 3 == 2 and index >= len(calendar) - 10 else 0.0
-            is_absent = rng.random() < min(
-                0.70, absence_probability + monday_effect + recent_effect
-            )
-            if not is_absent:
-                user_punches[day] = rng.random() < late_probability
-        punches[user_id] = user_punches
-
-    return demo_employees, punches
 
 
 def attendance_index(attendance, work_start) -> dict[int, dict[date, bool]]:
@@ -528,7 +506,7 @@ def save_predictions(
             row["risk_level"],
             row["reason"],
             int(min(30, row["history_days"])),
-            MODEL_VERSION + ("-demo" if data_source == "demo" else ""),
+            MODEL_VERSION + ("-synthetic" if data_source == "synthetic" else ""),
         )
         for _, row in predictions.iterrows()
     ]
@@ -564,41 +542,32 @@ def main() -> int:
     try:
         ensure_predictions_table(connection)
         ensure_training_table(connection)
-        data_source = "demo" if args.demo else "real"
-
-        if args.demo:
-            employees = load_active_employees(connection)
-            calendar = workdays_between(
-                prediction_day - timedelta(days=180),
-                prediction_day - timedelta(days=1),
-                holidays,
+        latest_rows = fetch_rows(
+            connection,
+            "SELECT MAX(date) AS latest_date FROM attendance WHERE date <= %s",
+            (latest_complete_day,),
+        )
+        latest_attendance = latest_rows[0]["latest_date"] if latest_rows else None
+        if not latest_attendance:
+            raise SystemExit(
+                "No completed attendance history was found. Sync the devices or add SQL training punches before running the AI module."
             )
-            employees, punches = generate_demo_history(employees, calendar)
-        else:
-            latest_rows = fetch_rows(
-                connection,
-                "SELECT MAX(date) AS latest_date FROM attendance WHERE date <= %s",
-                (latest_complete_day,),
+        history_end = min(latest_complete_day, as_date(latest_attendance))
+        if (latest_complete_day - history_end).days > 3:
+            print(
+                f"Warning: the latest attendance date is {history_end.isoformat()}. "
+                "Sync the devices for fresher predictions.",
+                file=sys.stderr,
             )
-            latest_attendance = latest_rows[0]["latest_date"] if latest_rows else None
-            if not latest_attendance:
-                raise SystemExit(
-                    "No completed attendance history was found. Sync the devices before running the AI module."
-                )
-            history_end = min(latest_complete_day, as_date(latest_attendance))
-            if (latest_complete_day - history_end).days > 3:
-                print(
-                    f"Warning: the latest attendance date is {history_end.isoformat()}. "
-                    "Sync the devices for fresher predictions.",
-                    file=sys.stderr,
-                )
-            employees, attendance, work_start = load_source_data(connection, history_end)
-            punches = attendance_index(attendance, work_start)
-            first_attendance_day = min(as_date(row["date"]) for row in attendance)
-            calendar_start = max(
-                first_attendance_day, history_end - timedelta(days=MAX_LOOKBACK_DAYS)
-            )
-            calendar = workdays_between(calendar_start, history_end, holidays)
+        employees, attendance, work_start, data_source = load_source_data(
+            connection, history_end
+        )
+        punches = attendance_index(attendance, work_start)
+        first_attendance_day = min(as_date(row["date"]) for row in attendance)
+        calendar_start = max(
+            first_attendance_day, history_end - timedelta(days=MAX_LOOKBACK_DAYS)
+        )
+        calendar = workdays_between(calendar_start, history_end, holidays)
 
         training = build_training_data(employees, punches, calendar)
         if len(training) < 30 or training["absent"].nunique() < 2:
