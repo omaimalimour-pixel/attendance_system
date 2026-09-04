@@ -421,3 +421,37 @@ table.dt tbody td,table.data tbody td,table.att tbody td{font-size:14.5px!import
 
 /* Warning alert */
 .alert-warning{background:rgba(251,191,36,.1);color:var(--amber);border:1px solid rgba(251,191,36,.2)}
+
+
+/* ===== DARK DATE PICKERS ===== */
+input[type="date"]{
+  color-scheme:dark;
+}
+input[type="date"]::-webkit-calendar-picker-indicator{
+  cursor:pointer;
+  opacity:.78;
+  filter:invert(1) brightness(1.45);
+}
+.di{
+  position:relative;
+}
+.di svg{
+  flex:0 0 auto;
+  pointer-events:none;
+}
+.di input[type="date"]{
+  position:relative;
+  cursor:pointer;
+  padding-right:2px;
+}
+.di input[type="date"]::-webkit-calendar-picker-indicator{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  margin:0;
+  padding:0;
+  opacity:0;
+  filter:none;
+  cursor:pointer;
+}
