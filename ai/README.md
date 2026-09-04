@@ -1,8 +1,11 @@
 # Module IA — prédiction du risque d’absence
 
 Ce module ajoute une prédiction par **Random Forest** sans remplacer le système
-de pointage actuel. Il lit `employees`, `attendance` et `settings`, puis crée sa
-propre table `absence_predictions`.
+de pointage actuel. Il lit `employees`, `attendance` et `settings`, puis crée deux
+tables dédiées :
+
+- `ai_training_data` : données préparées pour entraîner le modèle ;
+- `absence_predictions` : résultats calculés pour les employés.
 
 ## Avant de commencer
 
@@ -34,9 +37,10 @@ tables réelles :
 python ai\predict_absences.py --demo
 ```
 
-Ce mode fabrique l’historique uniquement en mémoire. Il conserve les vrais noms
-d’employés pour l’affichage, mais marque les résultats **Demo data**. Il ne modifie
-ni `employees` ni `attendance`.
+Ce mode fabrique un historique d’apprentissage, l’enregistre dans la table
+`ai_training_data`, puis entraîne le modèle. Il conserve les vrais noms d’employés
+pour l’affichage et marque les résultats **Demo data**. Il ne modifie ni
+`employees` ni `attendance`.
 
 Ouvrir ensuite :
 

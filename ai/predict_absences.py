@@ -169,6 +169,39 @@ def ensure_predictions_table(connection) -> None:
         cursor.close()
 
 
+def ensure_training_table(connection) -> None:
+    cursor = connection.cursor()
+    try:
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS ai_training_data (
+                id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                sample_date DATE NOT NULL,
+                department_id VARCHAR(50) NOT NULL,
+                weekday TINYINT NOT NULL,
+                month TINYINT NOT NULL,
+                absence_rate_7 DECIMAL(8,6) NOT NULL,
+                absence_rate_30 DECIMAL(8,6) NOT NULL,
+                late_rate_7 DECIMAL(8,6) NOT NULL,
+                late_rate_30 DECIMAL(8,6) NOT NULL,
+                present_streak INT NOT NULL,
+                absence_streak INT NOT NULL,
+                history_days INT NOT NULL,
+                absent TINYINT(1) NOT NULL,
+                data_source ENUM('real','demo') NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_ai_training_source (data_source),
+                INDEX idx_ai_training_date (sample_date),
+                UNIQUE KEY uniq_ai_training_sample (data_source, user_id, sample_date)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """
+        )
+        connection.commit()
+    finally:
+        cursor.close()
+
+
 def load_active_employees(connection):
     employees = fetch_rows(
         connection,
@@ -415,6 +448,59 @@ def main_factor(row: pd.Series) -> str:
     return "Pattern estimated from recent attendance history"
 
 
+def save_training_data(
+    connection,
+    training: pd.DataFrame,
+    data_source: str,
+) -> None:
+    sql = """
+        INSERT INTO ai_training_data
+            (user_id, sample_date, department_id, weekday, month,
+             absence_rate_7, absence_rate_30, late_rate_7, late_rate_30,
+             present_streak, absence_streak, history_days, absent,
+             data_source, created_at)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
+        ON DUPLICATE KEY UPDATE
+            department_id = VALUES(department_id),
+            weekday = VALUES(weekday),
+            month = VALUES(month),
+            absence_rate_7 = VALUES(absence_rate_7),
+            absence_rate_30 = VALUES(absence_rate_30),
+            late_rate_7 = VALUES(late_rate_7),
+            late_rate_30 = VALUES(late_rate_30),
+            present_streak = VALUES(present_streak),
+            absence_streak = VALUES(absence_streak),
+            history_days = VALUES(history_days),
+            absent = VALUES(absent),
+            created_at = NOW()
+    """
+    values = [
+        (
+            int(row["user_id"]),
+            row["sample_date"],
+            str(row["department_id"]),
+            int(row["weekday"]),
+            int(row["month"]),
+            round(float(row["absence_rate_7"]), 6),
+            round(float(row["absence_rate_30"]), 6),
+            round(float(row["late_rate_7"]), 6),
+            round(float(row["late_rate_30"]), 6),
+            int(row["present_streak"]),
+            int(row["absence_streak"]),
+            int(row["history_days"]),
+            int(row["absent"]),
+            data_source,
+        )
+        for _, row in training.iterrows()
+    ]
+    cursor = connection.cursor()
+    try:
+        cursor.executemany(sql, values)
+        connection.commit()
+    finally:
+        cursor.close()
+
+
 def save_predictions(
     connection,
     predictions: pd.DataFrame,
@@ -477,6 +563,7 @@ def main() -> int:
     connection = database_connection()
     try:
         ensure_predictions_table(connection)
+        ensure_training_table(connection)
         data_source = "demo" if args.demo else "real"
 
         if args.demo:
@@ -526,6 +613,8 @@ def main() -> int:
                 "At least 5 present and 5 absent training examples are required."
             )
 
+        save_training_data(connection, training, data_source)
+
         future = build_prediction_data(employees, punches, calendar, prediction_day)
         if future.empty:
             raise SystemExit(
@@ -560,6 +649,7 @@ def main() -> int:
         print(f"Training samples: {len(training)}")
         print(f"Employees predicted: {len(future)}")
         print(f"Data source: {data_source}")
+        print(f"Training rows saved in MySQL: {len(training)}")
         if metrics:
             print(
                 "Chronological validation: "

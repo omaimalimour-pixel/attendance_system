@@ -9,6 +9,7 @@ $tableReady = db_table_exists('absence_predictions');
 $predictionDate = null;
 $generatedAt = null;
 $dataSource = null;
+$trainingRows = 0;
 $predictions = [];
 $counts = ['high' => 0, 'medium' => 0, 'low' => 0];
 
@@ -38,6 +39,12 @@ if ($tableReady) {
                 $generatedAt = $prediction['generated_at'];
             }
         }
+        if (db_table_exists('ai_training_data')) {
+            $trainingRows = (int) db_val(
+                'SELECT COUNT(*) FROM ai_training_data WHERE data_source = ?',
+                [$dataSource]
+            );
+        }
     }
 }
 
@@ -48,7 +55,7 @@ include __DIR__ . '/includes/header.php';
 .ai-intro{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:20px;padding:18px 20px;border:1px solid rgba(129,140,248,.22);border-radius:14px;background:linear-gradient(120deg,rgba(129,140,248,.11),rgba(34,211,238,.05))}
 .ai-intro h2{font-family:'Sora',sans-serif;font-size:20px;margin-bottom:5px}.ai-intro p{color:#B0B8D0;max-width:760px}
 .ai-chip{white-space:nowrap;padding:6px 11px;border-radius:999px;background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.2);color:#22D3EE;font-size:12px;font-weight:700}
-.ai-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:20px}
+.ai-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
 .ai-stat{padding:17px 18px;border-radius:12px;background:#0A0C18;border:1px solid rgba(255,255,255,.09)}
 .ai-stat span{display:block;color:#9AA2C0;font-size:13px}.ai-stat strong{display:block;margin-top:3px;font-family:'Sora',sans-serif;font-size:28px}
 .ai-high strong{color:#FB7185}.ai-medium strong{color:#FBBF24}.ai-low strong{color:#34D399}
@@ -92,6 +99,7 @@ include __DIR__ . '/includes/header.php';
         <div class="ai-stat ai-high"><span>High risk</span><strong><?= (int)$counts['high'] ?></strong></div>
         <div class="ai-stat ai-medium"><span>Medium risk</span><strong><?= (int)$counts['medium'] ?></strong></div>
         <div class="ai-stat ai-low"><span>Low risk</span><strong><?= (int)$counts['low'] ?></strong></div>
+        <div class="ai-stat"><span>Training rows in MySQL</span><strong><?= (int)$trainingRows ?></strong></div>
     </div>
 
     <div class="panel">
