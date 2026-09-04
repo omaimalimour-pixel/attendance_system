@@ -106,8 +106,11 @@ function db_insert_id(): int
 /** True if a table exists. */
 function db_table_exists(string $table): bool
 {
-    $res = db_run("SHOW TABLES LIKE ?", [$table]);
-    return $res instanceof mysqli_result && mysqli_num_rows($res) > 0;
+    return (int) db_val(
+        "SELECT COUNT(*) FROM information_schema.TABLES
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?",
+        [$table]
+    ) > 0;
 }
 
 /** Friendly fatal error page for DB connection failures. */
